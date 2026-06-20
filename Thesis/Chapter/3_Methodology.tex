@@ -1,0 +1,723 @@
+% \documentclass[../Main.tex]{subfiles}
+
+% \begin{document}
+\label{chapter3:Our Threshold Batch Decryption system}
+
+\section{Technical Overview}
+At a high level, our scheme adapts the toolbox for thresholdizing lattice gadget
+trapdoors from~\cite{AC:ALLW25} to the batched IBE (BIBE) construction of
+Boneh, Laufer and Tas~\cite{EPRINT:BonLauTas25}. In~\cite{EPRINT:BonLauTas25},
+the authors use the shifted multi-preimage trapdoor sampler of Waters, Wee, and
+Wu~\cite{EC:WatWeeWu25} as an accumulator that binds all identities within a
+batch. As a result, the pre-decryption key is a Gaussian preimage of a masking
+vector, in the same spirit as the dual-Regev scheme. By applying the partial
+trapdoor toolbox, we let multiple parties independently sample fragments of this
+preimage and recombine them afterwards, thereby removing the single point of
+failure in the original decryption authority.
+
+Throughout, $N$ denotes the number of parties (the committee) and $k\le N$ the
+reconstruction threshold, so that any $k$-out-of-$N$ quorum can decrypt while any
+$k-1$ parties learn nothing.
+
+\paragraph{3.1.1. The Index-Dependent Batch IBE scheme by Boneh, Laufer and Tas~\cite{EPRINT:BonLauTas25}.}
+Let $r_1, \dots, r_\ell$ be the batch of identity tags, where $r_i$ corresponds to
+index $i$. The pre-decryption algorithm first samples a preimage vector
+$
+  \mathbf{v} = \mathsf{col}(\mathbf{v}^1_1, \dots, \mathbf{v}^1_\ell,
+  \hat{\mathbf{c}}, \mathbf{v}^2_1, \dots, \mathbf{v}^2_\ell)
+$
+of $(\mathbf{u}, \dots, \mathbf{u}) \in \mathbb{Z}_q^{n\ell}$ under
+$[\mathbf{A} \mid \hat{\mathbf{A}}]$, so that
+\[
+  [\mathbf{A}_i \mid \mathbf{G} \mid H_{\mathsf{ro}}(r_i)]
+  \begin{bmatrix} \mathbf{v}^1_i \\ \hat{\mathbf{c}} \\ \mathbf{v}^2_i \end{bmatrix}
+  = \mathbf{u}
+  \quad \text{for all } i = 1, \dots, \ell.
+\]
+Given only $\mathsf{pk}$, this preimage is sampled publicly by generating a
+trapdoor $\mathbf{T}_{\mathbf{A}}$ for $\mathbf{A}$ and calling
+$\mathsf{SampleLeft}(\mathbf{A}, \hat{\mathbf{A}}, \mathbf{T}_{\mathbf{A}},
+(\mathbf{u}, \dots, \mathbf{u}), \sigma)$. To enable decryption of all $\ell$
+ciphertexts, the algorithm then returns the pre-decryption key
+\[
+  \mathsf{sbk} \leftarrow \mathsf{SamplePre}(\mathbf{C}, \mathbf{T}_{\mathbf{C}},
+  \mathbf{c} := \mathbf{G}\hat{\mathbf{c}}, \sigma),
+  \qquad \text{so that } \mathbf{C} \cdot \mathsf{sbk} = \mathbf{G}\hat{\mathbf{c}}.
+\]
+The triple $(\mathsf{sbk}, \mathbf{v}^1_i, \mathbf{v}^2_i)$ is then an IBE secret
+key for the tag $r_i$, satisfying
+\[
+  [\mathbf{C} \mid \mathbf{A}_i \mid H_{\mathsf{ro}}(r_i)]
+  \begin{bmatrix} \mathsf{sbk} \\ \mathbf{v}^1_i \\ \mathbf{v}^2_i \end{bmatrix}
+  = \mathbf{u}.
+\]
+For decryption to succeed, every decryptor must obtain the \emph{same} preimage
+$\mathbf{v}$; this is ensured by deriving the randomness of $\mathsf{SampleLeft}$
+from a hash function modeled as a random oracle.
+
+\paragraph{3.1.2. Lattice trapdoor secret sharing technique in~\cite{AC:ALLW25}.}
+The key idea is to secret-share in the \emph{image space} rather than the
+preimage space, which sidesteps the norm-growth problems of secret-sharing short
+vectors. Recall that the gadget matrix $\mathbf{G} = \mathbf{I}_n \otimes
+\mathbf{g}^\top$, with $\mathbf{g}^\top = (1, 2, \dots, 2^{\tilde{q}-1})$, admits a
+publicly known short basis and hence allows preimage sampling without any secret;
+a \emph{gadget trapdoor} (or $\mathbf{G}$-trapdoor) of a matrix $\mathbf{A}$ is then
+a short matrix $\mathbf{U}$ with $\mathbf{A}\mathbf{U} \equiv \mathbf{G} \bmod q$
+~\cite{C:MicPei12}, which reduces preimage sampling for $\mathbf{A}$ to the easy
+gadget case. Now let $\mathbf{V} \in \mathbb{Z}_q^{k\times N}$ be the Vandermonde
+matrix whose $j$-th column is
+$\mathbf{v}_j = (1, v_j, \dots, v_j^{k-1})^\top$, corresponding to $k$-out-of-$N$
+Shamir sharing over the evaluation points $(v_j)_{j\in[N]}$. Each party's partial
+trapdoor is a short matrix $\mathbf{U}_j \in \mathbb{Z}_q^{mk\times m}$ satisfying
+\[
+  \mathbf{A}\cdot\mathbf{U}_j \equiv \mathbf{v}_j \otimes \mathbf{G} \bmod q,
+  \qquad \mathbf{A} \in \mathbb{Z}_q^{nk\times mk},
+\]
+i.e.\ a gadget trapdoor of $\mathbf{A}$ tagged by $\mathbf{v}_j$, so that
+$\mathbf{U}_j$ can only sample preimages whose image lies in the
+$\mathbb{Z}_q$-subspace spanned by $\mathbf{v}_j \otimes \mathbf{I}_n$; in effect,
+the image space is partitioned into $N$ subspaces, one per party. To sample a
+preimage of a target $\mathbf{y}$ for a recovery set $T \subseteq_k [N]$, one
+decomposes $\mathbf{y} \equiv \sum_{j\in T} \mathbf{v}_j \otimes \mathbf{z}_j
+\bmod q$, which is possible since any $k$ columns of $\mathbf{V}$ are invertible.
+Party $j$ then locally produces a partial preimage $\mathbf{x}_j$ with
+$\mathbf{A}\mathbf{x}_j \equiv \mathbf{v}_j \otimes \mathbf{z}_j \bmod q$, and the
+full preimage is simply the sum $\mathbf{x} = \sum_{j\in T} \mathbf{x}_j$, for which
+$\mathbf{A}\mathbf{x} \equiv \mathbf{y} \bmod q$. Moreover, rather than outputting
+the insecure $\mathbf{x}_j := \mathbf{U}_j \cdot \mathbf{G}^{-1}(\mathbf{z}_j)$
+(which leaks $\mathbf{U}_j$ by linear algebra after enough queries), one samples a
+Gaussian $\mathbf{d}_j$ with $\mathbf{G}\mathbf{d}_j \equiv \mathbf{z}_j \bmod q$
+and covariance shaped by $\mathbf{U}_j$, so that $\mathbf{x}_j = \mathbf{U}_j
+\mathbf{d}_j$ is a spherical Gaussian over the rank-$m$ sublattice
+$\Lambda(\mathbf{U}_j)$, leaking only $\Lambda(\mathbf{U}_j)$ and not $\mathbf{U}_j$
+itself.
+
+\paragraph{3.1.3. Our threshold batch identity-based encryption scheme.}
+The setup algorithm now samples, for each party $j\in[N]$, a partial trapdoor tuple
+$\mathsf{ptd}_j = (\mathbf{U}_j, \mathbf{C}_j, \mathbf{T}_{\mathbf{C}_j})$ via
+$\mathsf{PTrapGen}(\mathbf{C}, \mathbf{T}_{\mathbf{C}}, j)$, which are then secretly
+distributed to the corresponding parties. With these in hand, the pre-decryption
+algorithm proceeds exactly as in~\cite{EPRINT:BonLauTas25} up to the point of
+forming the shifted vector $\mathbf{c} := \mathbf{G}\hat{\mathbf{c}}$. The crucial
+difference is that the single $\mathsf{SamplePre}$ call producing $\mathsf{sbk}$ is
+replaced by its distributed analogue: each party $j$ in a quorum
+$T = \{v_1,\dots,v_k\} \subseteq_k [N]$, where every $v_i\in\mathbb{Z}$ is the
+identification value pre-assigned to a distributed party, locally samples a partial
+pre-decryption key
+\[
+  \mathbf{sbk}_j \leftarrow \mathsf{PSampPre}(\mathbf{C}, \mathsf{ptd}_j, T,
+  \mathbf{c} := \mathbf{G}\hat{\mathbf{c}}, \sigma_2) \in \mathbb{Z}_q^{2mk}.
+\]
+Once partial keys from a full quorum are available, anyone can reconstruct the
+complete pre-decryption key by simple summation,
+\[
+  \mathbf{sbk} \leftarrow \mathsf{Rec}\big((\mathbf{sbk}_j)_{j \in T}\big)
+  \in \mathbb{Z}_q^{2mk},
+\]
+by the correctness of the partial trapdoor scheme, is satisfied
+$\mathbf{C}\cdot\mathbf{sbk} = \mathbf{G}\hat{\mathbf{c}}$ with $\|\mathbf{sbk}\|$
+bounded. The remainder of the procedure (encryption and the final rounding-based
+decryption) is identical to the BIBE scheme of~\cite{EPRINT:BonLauTas25}. In this
+way the decryption authority is split among $N$ parties, and no coalition of fewer
+than $k$ of them can recover a pre-decryption key.
+
+\paragraph{3.1.4. Security.}
+The security argument largely mirrors that of the BIBE construction
+in~\cite{EPRINT:BonLauTas25}, with a few subtle differences introduced by the
+trapdoor secret-sharing layer. First, we work in a selective
+TBIBE security game: before observing $\mathsf{pk}$, the adversary must commit to a
+corruption set $\mathcal{C}\subseteq_{<k}[N]$ of at most $k-1$ parties, the full
+list of pre-decryption (secret-key) queries
+$\big(T_i,(r_{i,j})_{j\in[\ell]}\big)_{i\in[L]}$, and the challenge tuple
+$(T^\ast, z^\ast, r^\ast)$ specifying the target quorum, the target party, and the
+target identity. During the query phase, for the challenge quorum $T^\ast$ the
+adversary receives all partial pre-decryption keys \emph{except} the one held by
+the target party $z^\ast$, which is withheld. This downgrade from adaptive to selective security is inherited from the partial trapdoor secret-sharing
+scheme~\cite{AC:ALLW25}: although its construction is simple, simulating partial
+trapdoors and partial preimages without the full trapdoor is delicate and forces
+the adversary to declare its corruptions and challenge in advance.
+
+The proof proceeds through a sequence of hybrid games. The early hybrids
+reprogram the sampler CRS, the random oracle $H_{\mathsf{ro}}$, and the
+explainable-sampler oracle $H_{\mathsf{sp}}$ so that the challenge matrices are
+embedded as $\mathbf{A}_{r^\ast} = \mathbf{C}\mathbf{H}_1$ and
+$H_{\mathsf{ro}}(r^\ast) = \mathbf{C}\mathbf{H}_2$, while pre-decryption answers
+are simulated via $\mathsf{SampleLeft}$ together with the explainability of the
+sampler; each step changes the adversary's view by at most a negligible amount.
+In the final reduction we build an adversary $\mathcal{B}$ against the
+$(nk, 2mk, \chi_0, \chi_1, \sigma_2)$-indistinguishability of the partial
+trapdoor, which in turn is implied by the $\kappa$-LWE assumption~\cite{AC:ALLW25}.
+The reduction $\mathcal{B}$ forwards the corruption set $\mathcal{C}$ to the
+partial-trapdoor challenger, receives the public objects
+$(\mathsf{crs}_{\mathsf{samp}}, \tilde{\mathbf{A}}, \tilde{\mathbf{B}},
+\mathbf{C}, \mathbf{u})$ together with the corrupt partial trapdoors
+$(\mathbf{U}_j)_{j\in\mathcal{C}}$, and on the challenge $(T^\ast, z^\ast)$ obtains
+the partial preimages $(\mathbf{x}^\ast_j)_{j\in T^\ast\setminus\{z^\ast\}}$, a
+target $\mathbf{y}^\ast$, and challenge components $(\mathbf{ch}_0, ch_1)$. It then
+assembles the challenge ciphertext as
+\[
+  \mathsf{ct}[1] := ch_1 + m_b\cdot\lfloor q/2\rfloor, \qquad
+  \mathsf{ct}[2] := \mathbf{ch}_0, \qquad
+  \mathsf{ct}[3] := \mathbf{ch}_0^\top\mathbf{H} + \mathbf{e}',
+\]
+with $\mathbf{e}'\leftarrow\mathcal{D}_{\mathbb{Z},\chi'}^{t+\overline{m}}$. When
+$ch_1 = \mathbf{u}^\top\mathbf{s} + e_1$ is a genuine LWE sample, $\mathcal{B}$
+perfectly reproduces the hybrid in which the challenge ciphertext is real;
+when $ch_1$ is uniform, it reproduces the hybrid in which the ciphertext is
+uniformly random. Hence any non-negligible distinguishing advantage of
+$\mathcal{A}$ translates directly into an advantage against the partial-trapdoor
+indistinguishability, and therefore against $\kappa$-LWE. Combining all the
+hybrid transitions, the scheme is selectively secure under the LWE/SIS-type
+assumptions underlying the partial trapdoor, with the statistical losses
+controlled by Gaussian smoothing and noise-flooding arguments.
+
+\paragraph{3.1.5. The $\kappa$-LWE Hardness Assumption.}
+The security of our scheme ultimately rests on a generalized variant of the
+Learning With Errors (LWE) problem known as $\kappa$-LWE. We briefly recall the
+relevant assumptions here; formal definitions appear in Chapter~2.
+
+\smallskip
+\noindent\textit{Learning With Errors.}
+Introduced by Regev~\cite{J:Regev09}, who established a quantum reduction from
+worst-case lattice problems to its average-case hardness, LWE has since become
+the central hardness assumption underlying modern lattice-based cryptography.
+The decisional $\mathrm{LWE}_{\mathbb{Z}_q,n,\chi}$ problem is parameterized
+by a modulus $q$, a secret dimension $n$, and an error distribution $\chi$ over
+$\mathbb{Z}_q$ (typically a discrete Gaussian $\mathcal{D}_{\mathbb{Z},\sigma}$
+with small width $\sigma \ll q$). An adversary is given access to an oracle
+that either returns noisy linear equations
+\[
+  (\mathbf{a}_i,\, b_i := \mathbf{a}_i^\top\mathbf{s} + e_i) \in \mathbb{Z}_q^n \times \mathbb{Z}_q,
+  \qquad \mathbf{a}_i \leftarrow \mathbb{Z}_q^n,\; e_i \leftarrow \chi,
+\]
+for a fixed secret $\mathbf{s} \leftarrow \mathbb{Z}_q^n$, or uniformly random
+pairs from $\mathbb{Z}_q^n \times \mathbb{Z}_q$. The problem asks to distinguish
+between the two cases. In matrix form, given $m$ samples, this is equivalent to
+distinguishing $(\mathbf{A},\, \mathbf{A}^\top\mathbf{s} + \mathbf{e})$ from
+$(\mathbf{A},\, \mathbf{u})$ for $\mathbf{A} \leftarrow \mathbb{Z}_q^{n\times m}$,
+$\mathbf{e} \leftarrow \chi^m$, and $\mathbf{u} \leftarrow \mathbb{Z}_q^m$.
+
+\smallskip
+\noindent\textit{From $k$-LWE (LPSS14) to $\kappa$-LWE (ALLW25).}
+The $k$-LWE problem was introduced by Ling, Phan, Stehle, and
+Steinfeld~\cite{C:LPSS14} in the context of traitor tracing. It augments the
+standard LWE oracle with $k$ additional \emph{hint} evaluations of the secret:
+for known matrices $\mathbf{R}_i \in \mathbb{Z}_q^{n \times m}$ and fresh noise
+$\mathbf{f}_i \leftarrow \chi^m$, the adversary additionally receives
+$\mathbf{R}_i^\top\mathbf{s} + \mathbf{f}_i$ for each $i \in [k]$. These hints
+make the problem strictly easier for an adversary (more information about
+$\mathbf{s}$ is revealed), yet Ling et al.\ proved that $k$-LWE remains hard
+under the standard LWE assumption: an adversary breaking $k$-LWE with advantage
+$\varepsilon$ yields an adversary breaking standard LWE with advantage
+$\Omega(\varepsilon^3/\mathrm{poly}(n))$, where the cubic degradation is
+inherent to the self-correcting reduction technique of~\cite{C:LPSS14}.
+
+Albrecht, Lai, Lapiha, and Woo~\cite{AC:ALLW25} generalize this to a
+structured $\kappa$-LWE assumption suited to the partial trapdoor setting. Here
+the hints are not arbitrary noisy linear functions but rather columns of the
+partial trapdoor matrices $\mathbf{U}_i \in \Lambda_q^\perp(\mathbf{A})$
+sampled from a structured Gaussian
+$\mathcal{D}_{\Lambda_q^\perp(\mathbf{A}),\mathbf{S}_i}$ for prescribed width
+matrices $\{\mathbf{S}_i\}_i$. The assumption asserts that
+$(\mathbf{A},\,(\mathbf{U}_i)_{i\in[\kappa]},\,\mathbf{A}^\top\mathbf{s}+\mathbf{e})$
+is computationally indistinguishable from the same tuple with the last component
+replaced by a sample from the $\kappa$-uniform distribution (see Chapter~2).
+ALLW25 prove this reduces to standard LWE following the LPSS14 self-correcting
+framework, inheriting the same polynomial security loss. In our construction,
+the $\kappa = 2m(k-1)$ hint columns visible to an adversary corrupting up to
+$k-1$ parties correspond exactly to the partial trapdoor columns satisfying
+$\mathbf{C}\mathbf{U}_j \equiv \mathbf{v}_j \otimes \mathbf{G} \pmod{q}$,
+placing our scheme directly within the ALLW25 $\kappa$-LWE framework.
+
+\section{Syntax}
+
+
+A threshold batch identity-based encryption (\(\mathsf{TBIBE}\)) scheme instantiated with a committee of \(N \in \mathbb{N}\) parties, a threshold \(k \in [N]\), a maximum batch size \(\ell \in \mathbb{N}\), a message space \(\mathcal{M}\), subset $T \subseteq_k [N]$ and an identity space \(\mathcal{I}\) consists of five PPT algorithms:
+\begin{itemize}
+    \item
+    $
+    \mathsf{TBIBE.Setup}(1^\lambda,1^\ell,1^k, 1^N)\rightarrow (\mathsf{pk},\mathsf{sk}_1,\ldots,\mathsf{sk}_N).
+    $
+
+    \item
+    $
+    \mathsf{TBIBE.Enc}(\mathsf{pk},r,m)\rightarrow \mathsf{ct}.
+    $
+
+    \item
+    $
+    \mathsf{TBIBE.PreDec}(\mathsf{sk}_i,T, (r_i)_{i\in[\ell]})\rightarrow \mathsf{sbk}_i.
+    $
+
+    \item
+    $
+    \mathsf{TBIBE.Combine}(\mathsf{pk},T\subseteq [N],(\mathsf{sbk}_i)_{i\in T})\rightarrow \mathsf{sbk}.
+    $
+
+    \item
+    $
+    \mathsf{TBIBE.Dec}(\mathsf{pk},\mathsf{sbk},(\mathsf{ct}_i)_{i\in[\ell]})\rightarrow (m_i)_{i\in[\ell]}.
+    $
+\end{itemize}
+
+\begin{definition}[Correctness]
+\label{def:TBIBE_correctness}
+A $(k,N)$-TBIBE is said to be correct if, for any identity set
+$(r_i)_{i\in [\ell]} \in \mathcal{I}^\ell$, and $(m)_{i \in [\ell]} \in \mathcal{M}^\ell$, subset $T \subseteq_t [k]$
+it holds that
+\[
+\Pr\left[
+\begin{array}{c|l}
+(m_i)_{i \in [\ell]} = (m_i')_{i \in [\ell]}
+&
+\begin{array}{l}
+\mathbf{sbk}_j \leftarrow \mathsf{TBIBE.PreDec}( \mathsf{sk}_j, T, (r_i)_{i\in [\ell]}),
+\quad \forall j \in T \\[2mm]
+\mathsf{c}_i \leftarrow \mathsf{TBIBE.Enc}(\mathsf{pk}, r_i, m_i)\\[2mm] 
+\mathsf{sbk} \leftarrow \mathsf{TBIBE.Combine}(\mathsf{pk},T\subseteq [N],(\mathsf{sbk}_i)_{i\in T})\\[2mm]
+m'_i \leftarrow \mathsf{TBIBE.Dec}\bigl(\mathsf{pk},(\mathsf{sk}_j)_{j \in T}, (\mathsf{c}_i)_{i \in \ell}\bigr)
+\end{array}
+\end{array}
+\right]
+\geq 1 - \mathsf{negl}(\lambda).
+\]
+\end{definition}
+
+\begin{definition}[Security]
+\label{def:TBIBE_security}
+
+A $(k,N)$-TBIBE scheme
+$
+\Pi_{\mathsf{TBIBE}} = (\mathsf{Setup}, \mathsf{Enc}, \mathsf{PreDec}, \mathsf{Combine}, \mathsf{Dec})
+$
+is said to be selectively secure, if for any PPT, $\mathcal{A}$
+it holds that
+\[
+\left|
+\Pr\left[\mathrm{Exp}^{0}_{\Pi_{\mathsf{TBIBE}},\mathcal{A}}(1^\lambda)=1\right]
+-
+\Pr\left[\mathrm{Exp}^{1}_{\Pi_{\mathsf{TBIBE}},\mathcal{A}}(1^\lambda)=1\right]
+\right|
+< \mathrm{negl}(\lambda),
+\]
+where $\mathrm{Exp}^{b}_{\Pi_{\mathsf{TBIBE}},\mathcal{A}}$ is defined in Fig.~\ref{fig:TBIBE-security-experiment} and $\kappa$ is negligible.
+\end{definition}
+
+\section{Construction}
+We introduce our $k\text{-out-of-}N$ threshold batch decryption scheme. The construction is parameterized followed Table~\ref{tab:parameters}
+
+\begin{definition}[The hash function $H$]
+\label{def:hash}
+The hash function
+$H : \mathcal{I} \to \{0,1\}^{d}$
+is an injective function that maps an identity tag
+$r \in \mathcal{I}$
+to a bit vector in
+$\{0,1\}^{d}$
+
+
+\end{definition}
+
+\begin{definition}[The hash function $H_{\mathrm{ro}}$ 
+\label{def:hashro}
+\cite{EPRINT:BonLauTas25}]
+The hash function
+$
+    H_{\mathrm{ro}} : \mathcal{I} \to \mathbb{Z}_q^{nk \times \bar{m}}
+$
+is a random oracle that maps an identity tag $\tau \in \mathcal{I}$ to a matrix in
+$\mathbb{Z}_q^{nk \times \bar{m}}$.
+\end{definition}
+
+\begin{definition}[The hash function $H_{\mathrm{sp}}$ \cite{EPRINT:BonLauTas25}]
+\label{def:hashsp}
+
+Let
+$
+    \rho_{\mathsf{SL}}
+    :=
+    \rho(\lambda,\ell nk,\ell t+\widetilde{m},\ell \overline{m},q)
+$
+denote the randomness length of the explainable $\mathsf{SampleLeft}$ sampler
+from Theorem~1 when applied to matrices
+$
+    \mathbf{A}\in \mathbb{Z}_q^{\ell nk\times(\ell t+\widetilde{m})}
+    \text{ and }
+    \widehat{\mathbf{A}}\in \mathbb{Z}_q^{\ell nk \times \ell \widetilde{m}} .
+$
+The hash function
+$
+    H_{\mathrm{sp}}:
+    \mathbb{Z}_q^{\ell nk \times(\ell t+\widetilde{m})}
+    \times
+    \mathbb{Z}_q^{(\ell t+\widetilde{m})\times \ell \widetilde{m}}
+    \times
+    \mathcal{I}^{\ell}
+    \times
+    \mathbb{Z}_q^{nk}
+    \times
+    \mathbb{Z}^{+}
+    \to
+    \{0,1\}^{\rho_{\mathsf{SL}}}
+$
+takes as input a matrix
+$\mathbf{A}\in \mathbb{Z}_q^{\ell nk\times(\ell t+\widetilde{m})}$,
+a gadget trapdoor
+$\mathbf{T}_{\mathbf A}\in
+\mathbb{Z}^{(\ell t+\widetilde{m})\times \ell \widetilde{m}}$
+for $\mathbf{A}$, identity tags
+$(r_1,\ldots,r_\ell)\in\mathcal{I}^{\ell}$,
+a vector $\mathbf{u}\in\mathbb{Z}_q^n$, and a Gaussian width parameter
+$\sigma$. It outputs the random coins used by $\mathsf{SampleLeft}$.
+\end{definition}
+
+\noindent We now describe out threshold decryptoon scheme\\
+\vspace{0.4em} 
+\noindent$\mathbf{\mathsf{TBIBE.Setup}}(1^\lambda,1^\ell,1^k, 1^N):$ The trusted server calculates:
+\[
+\left\{
+\begin{aligned}
+&\mathsf{crs}_{\mathsf{samp}} \leftarrow \mathsf{Gen}(1^\lambda,1^d),
+\mathbf u \leftarrow\mathbb Z_q^{nk},\\
+&(\mathbf C,\mathbf{T}_{\mathbf{C}}) \leftarrow \mathsf{TrapGen}(1^{nk},q,2mk)\\
+\end{aligned}
+\right.
+\]
+
+For each party $j \in [N]$, it samples the tuple $\mathsf{ptd}_j := (\mathbf U_j,\mathbf C_j,\mathbf{T}_{\mathbf{C}_j}) \leftarrow \mathsf{PTrapGen}(\mathbf C,\mathbf T_{\mathbf{C}},j)$. The algorithm outputs {\setlength{\abovedisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{2pt}
+\[
+\mathsf{pk}:=(\mathsf{crs}_{\mathsf{samp}},\mathbf C,\mathbf u),
+\qquad
+\mathsf{sk}_j:=\mathsf{ptd}_j.
+\]
+}
+\noindent$\mathsf{TBIBE.Enc}(\mathsf{pk}, r \in \mathcal{I}, \mathsf{m} \in \{0,1\}):$ The algorithm samples $s \leftarrow \mathbb{Z}_q^{nk}$ and set $\tilde{h} := H(r) \in \{0,1\}^{d}$. The matrix $\mathbf{A}_r := \mathsf{ExpandLocal} (1^\lambda,\mathsf{crs}_{\mathsf{samp}},\tilde{h}) \in \mathbb{Z}_q^{nk \times t}$ is then computed. It next selects $e_1 \leftarrow \mathcal{D}_{\mathbb{Z},\chi_1}, \mathbf e_2 \leftarrow \mathcal{D}_{\mathbb{Z},\chi_0}^{2mk} \text{ and } \mathbf e_3 \leftarrow \mathcal{D}_{\mathbb{Z},\chi_0'}^{t+\overline{m}}$. It then sets  $\mathbf F := [\,\mathbf A_r | H_{\mathsf ro}(r)\,] \in \mathbb{Z}_q^{nk \times (t + \overline{m})}$. The algorithm outputs the ciphertext
+
+{\setlength{\abovedisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{2pt}
+\[
+\mathsf{ct}:=(r,\mathsf{ct}[1],\mathsf{ct}[2],\mathsf{ct}[3])
+\qquad \text{where} \qquad
+\left\{
+\begin{aligned}
+\mathsf{ct}[1] &:= \mathbf{u}^{\top}\mathbf{s}+e_1+m\cdot \lfloor q/2 \rfloor \in \mathbb{Z}_q,\\
+\mathsf{ct}[2] &:= \mathbf{C}^{\top}\mathbf{s}+\mathbf{e}_2 \in \mathbb{Z}_q^{2mk},\\
+\mathsf{ct}[3] &:= \mathbf{F}^{\top}\mathbf{s}+\mathbf{e}_3 \in \mathbb{Z}_q^{t + \overline{m}}.
+\end{aligned}
+\right.
+\]}
+$\mathsf{TBIBE.PreDec}(\mathsf{sk_j}, T \subset_{t} [N], (r_i)_{i \in [\ell]}):$ For each $i \in [\ell]$, the pre-decryption algorithm sets $\tilde{h}_i := H(r_i) \in \{0,1\}^d$. The algorithm then check for the distinction among all the vector $\tilde{h}_1, \dots, \tilde{h}_\ell$, otherwise, it aborts. It then generates the matrices
+{\setlength{\abovedisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{2pt}\[
+    (\mathbf A_1,\ldots,\mathbf A_\ell,\mathbf T_A)
+    := \mathsf{Expand}(1^\lambda,1^\ell,\mathsf{crs}_{\mathsf{samp}},(\tilde{\mathbf h}_i)_{i\in[\ell]})  
+    \]}
+
+where \[
+    \mathbf{A}
+    :=
+    \left[
+    \begin{array}{cccc|c}
+        \mathbf{A}_1 &              &        &              & \mathbf{G} \\
+                     & \mathbf{A}_2 &        &              & \mathbf{G} \\
+                     &              & \ddots &              & \vdots     \\
+                     &              &        & \mathbf{A}_\ell & \mathbf{G}
+    \end{array}
+    \right]
+    \in \mathbb{Z}_q^{\ell nk \times (\ell t+\tilde{m})}
+\]
+
+Let $
+    \hat{\mathbf{A}}
+    :=
+    \begin{bmatrix}
+        H_{\mathrm{ro}}(r_1) & & \\
+        & H_{\mathrm{ro}}(r_2) & \\
+        & & \ddots \\
+        & & & H_{\mathrm{ro}}(r_\ell)
+    \end{bmatrix}
+    \in \mathbb{Z}_q^{\ell n k \times \ell \bar{m}} .
+$ and employ $\mathbf{h} = (\mathbf{u},\dots,\mathbf{u})$, we calculate random coin 
+{
+$$\mathsf{rb}:=H_{\mathsf{sp}}(\mathbf A,\mathbf T_A,(r_i)_{i\in[\ell]},\mathbf u,\sigma_1)$$}
+
+and invokes 
+{\setlength{\abovedisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{2pt} $$\operatorname{col}(\mathbf v_1^1,\ldots,\mathbf v_\ell^1,\hat{\mathbf c},\mathbf v_1^2,\ldots,\mathbf v_\ell^2)
+    := \mathsf{SampleLeft}(\mathbf A,\hat{\mathbf A},\mathbf T_A,\mathbf h,\sigma_1,\mathsf{rb})
+$$}
+Finally, it derives the partial short pre-decryption key for each party $j \in [N]:$
+{\setlength{\abovedisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{2pt}
+$$\mathbf{sbk}_j\leftarrow \mathsf{PSampPre}(\mathbf C,\mathsf{ptd}_j,T,\mathbf c:=\mathbf G\hat{\mathbf c},\sigma_2) \in \mathbb{Z}_{q}^{2mk}$$}
+
+\noindent$\mathsf{TBIBE.Combine}(\mathsf{pk},T,(\mathsf{sbk}_i)_{i\in T}):$ The combination algorithm computes
+    $$\mathbf{sbk} \leftarrow \mathsf{Rec}((\mathbf{sbk}_j)_{j \in T}) \in \mathbb{Z}_q^{2mk}$$ 
+and return it as full-decryption key
+
+\noindent$\mathsf{TBIBE.Dec}(\mathsf{pk},(\mathbf{sbk}), (\mathsf{ct_i})_{i \in [\ell]}):$ the decryption algorithm first also follow the same path as PreDec to caculate $\operatorname{col}(\mathbf v_1^1,\ldots,\mathbf v_\ell^1,\hat{\mathbf c},\mathbf v_1^2,\ldots,\mathbf v_\ell^2)$. Finally, for each $i \in [\ell]$, it set $\mathbf v_i:=\operatorname{col}(\mathbf v_i^1,\mathbf v_i^2)$ and output the message $\mathsf{m}'_i$: 
+$$m_i' := \operatorname{round}\!\left(
+\mathsf{ct}_i[1]-\mathsf{sbk}^{\top}\mathsf{ct}_i[2]-\mathbf v_i^{\top}\mathsf{ct}_i[3]
+\right).$$
+Here, $\mathsf{round}(x)$ outputs $1$ if $|x - \lfloor q/2 \rfloor| < \lfloor q/4 \rfloor$, and $0$ otherwise.
+
+\begin{remark}
+Both $\mathsf{TBIBE.PreDec}$ and $\mathsf{TBIBE.Dec}$ can work with smaller batches of size less than $\ell$. The algorithms remain unchanged in this case, except for working with smaller matrices.
+\end{remark}
+\section{Correctness}
+\begin{theorem}[Correctness]
+The TBIBE scheme is correct, as in Definition~\ref{def:TBIBE_correctness},
+whenever $H$ is injective, as in Definition~\ref{def:hash}, and the
+parameters are chosen as in Table~\ref{tab:parameters}.
+\end{theorem}
+\begin{proof}
+Let $(r_i,m_i)_{i\in[\ell]}$ be a batch of identities and messages.
+Since $H$ is injective, the labels
+$
+    H(r_1),\ldots,H(r_\ell)
+$
+are distinct. Hence, the shifted multi-preimage sampler is applied to
+distinct labels and outputs vectors satisfying, for every $i\in[\ell]$,
+\[
+    \mathbf{F}_{r_i}\mathbf{v}_i+\mathbf{c}=\mathbf{u},
+    \qquad
+    \mathbf{F}_{r_i}:=
+    [\mathbf{A}_i \mid H_{\mathsf{ro}}(r_i)].
+\]
+Moreover, by the correctness of the partial lattice trapdoor scheme,
+the combined pre-decryption key
+$
+    \mathbf{sbk}
+    \leftarrow
+    \mathsf{Rec}\big((\mathbf{sbk}_j)_{j\in T}\big)
+$
+satisfies
+\[
+    \mathbf{C}\cdot\mathbf{sbk}=\mathbf{c}
+    \pmod q
+    \qquad\text{and}\qquad
+    \|\mathbf{sbk}\|\le \beta .
+\]
+Therefore, for every $i\in[\ell]$,
+$
+    \mathbf{F}_{r_i}\mathbf{v}_i+\mathbf{C}\cdot\mathbf{sbk}
+    =
+    \mathbf{u}
+    \pmod q .
+$
+
+Now consider the decryption expression. Using
+\[
+\begin{aligned}
+    \mathsf{ct}_i[1]
+    &=
+    \mathbf{u}^{\top}\mathbf{s}_i
+    +
+    e_{1,i}
+    +
+    m_i\lfloor q/2\rfloor,\\
+    \mathsf{ct}_i[2]
+    &=
+    \mathbf{C}^{\top}\mathbf{s}_i
+    +
+    \mathbf{e}_{2,i},\\
+    \mathsf{ct}_i[3]
+    &=
+    \mathbf{F}_{r_i}^{\top}\mathbf{s}_i
+    +
+    \mathbf{e}_{3,i},
+\end{aligned}
+\]
+we obtain
+\[
+\begin{aligned}
+    \mathsf{ct}_i[1]
+    &-
+    \left(
+        \mathbf{sbk}^{\top}\mathsf{ct}_i[2]
+        +
+        \mathbf{v}_i^{\top}\mathsf{ct}_i[3]
+    \right)
+    \\
+    &=
+    \mathbf{u}^{\top}\mathbf{s}_i
+    +
+    e_{1,i}
+    +
+    m_i\lfloor q/2\rfloor
+    -
+    \left(
+        \mathbf{sbk}^{\top}\mathbf{C}^{\top}\mathbf{s}_i
+        +
+        \mathbf{sbk}^{\top}\mathbf{e}_{2,i}
+        +
+        \mathbf{v}_i^{\top}\mathbf{F}_{r_i}^{\top}\mathbf{s}_i
+        +
+        \mathbf{v}_i^{\top}\mathbf{e}_{3,i}
+    \right)
+    \\
+    &=
+    \left(
+        \mathbf{u}
+        -
+        \mathbf{C}\mathbf{sbk}
+        -
+        \mathbf{F}_{r_i}\mathbf{v}_i
+    \right)^{\top}
+    \mathbf{s}_i
+    +
+    e_{1,i}
+    -
+    \mathbf{sbk}^{\top}\mathbf{e}_{2,i}
+    -
+    \mathbf{v}_i^{\top}\mathbf{e}_{3,i}
+    +
+    m_i\lfloor q/2\rfloor
+    \\
+    &=
+    e_{1,i}
+    -
+    \mathbf{sbk}^{\top}\mathbf{e}_{2,i}
+    -
+    \mathbf{v}_i^{\top}\mathbf{e}_{3,i}
+    +
+    m_i\lfloor q/2\rfloor
+    \pmod q .
+\end{aligned}
+\]
+
+It remains to bound the total error term
+$
+    E_i
+    :=
+    e_{1,i}
+    -
+    \mathbf{sbk}^{\top}\mathbf{e}_{2,i}
+    -
+    \mathbf{v}_i^{\top}\mathbf{e}_{3,i}.
+$
+By item~\ref{param:w} and Lemma~\ref{lem:tail_bound},
+$\mathbf{v}_i$ is distributed statistically close to a discrete Gaussian
+preimage with parameter $\sigma_1$. Hence, except with negligible
+probability,
+\[
+    \|\mathbf{v}_i\|
+    \le
+    \sigma_1\sqrt{t+\overline m}.
+\]
+Similarly, by the Gaussian tail bound and the parameter choices,
+\[
+    |e_{1,i}|\le \chi_1,
+    \qquad
+    \|\mathbf{e}_{2,i}\|\le \chi_0\sqrt{2mk},
+    \qquad
+    \|\mathbf{e}_{3,i}\|\le \chi_0'\sqrt{t+\overline m}.
+\]
+Using Cauchy--Schwarz, we get
+\[
+\begin{aligned}
+    |E_i|
+    &=
+    \left|
+        e_{1,i}
+        -
+        \mathbf{sbk}^{\top}\mathbf{e}_{2,i}
+        -
+        \mathbf{v}_i^{\top}\mathbf{e}_{3,i}
+    \right|
+    \\
+    &\le
+    |e_{1,i}|
+    +
+    \left|
+        \mathbf{sbk}^{\top}\mathbf{e}_{2,i}
+    \right|
+    +
+    \left|
+        \mathbf{v}_i^{\top}\mathbf{e}_{3,i}
+    \right|
+    \\
+    &\le
+    |e_{1,i}|
+    +
+    \|\mathbf{sbk}\|\cdot\|\mathbf{e}_{2,i}\|
+    +
+    \|\mathbf{v}_i\|\cdot\|\mathbf{e}_{3,i}\|
+    \\
+    &\le
+    \chi_1
+    +
+    \beta\chi_0\sqrt{2mk}
+    +
+    (t+\overline m)\sigma_1\chi_0'.
+\end{aligned}
+\]
+
+By the modulus condition in Table~\ref{tab:parameters},
+\[
+    q
+    >
+    4\left(
+        \chi_1
+        +
+        \beta\chi_0\sqrt{2mk}
+        +
+        (t+\overline m)\sigma_1\chi_0'
+    \right).
+\]
+Hence,
+$
+    |E_i| < q/4
+$
+except with negligible probability. Hence,
+\[
+    \mathsf{ct}_i[1]
+    -
+    \left(
+        \mathbf{sbk}^{\top}\mathsf{ct}_i[2]
+        +
+        \mathbf{v}_i^{\top}\mathsf{ct}_i[3]
+    \right)
+\]
+is closer to \(0\) when \(m_i=0\), and closer to \(\lfloor q/2\rfloor\)
+when \(m_i=1\). Thus the rounding procedure outputs
+$
+    m_i'=m_i
+$
+for every \(i\in[\ell]\), except with negligible probability. This proves
+correctness.
+
+Finally, the asymptotic sizes of the public key, pre-decryption key, and
+ciphertext are
+\[
+\left\{
+\begin{aligned}
+|\mathsf{pk}|
+&=
+n(2t+m)\log q
+=
+O\!\left(
+d\lambda^2\log(\lambda)\log(\ell)
++
+d\lambda^2\log^2(\ell)
+\right),
+\\[0.4em]
+|\mathsf{sbk}|
+&=
+O(k\sigma_2\sqrt{mk})
+=
+O\!\left(
+\lambda\log^2\lambda
++
+\lambda\log\lambda\log\ell
+\right),
+\\[0.4em]
+|\mathsf{ct}|
+&=
+(1+2mk+t+\overline m)\log q.
+\end{aligned}
+\right.
+\]
+\end{proof}
+% \end{document}

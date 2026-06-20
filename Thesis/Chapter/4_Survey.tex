@@ -1,0 +1,1327 @@
+\section{Correctness and Parameter Sizes}
+
+As opposed to the spilt trapdoor technique in \cite{AC:ALLW25} based on the more advanced module lattice assumption, the proposed protocol in this thesis underlied hardness assumption on integer lattice, which is a trivial case of aforementioned problem. 
+% Put this before the table, only once
+\newcounter{paramrow}
+\newcommand{\rowidx}[1]{%
+    \refstepcounter{paramrow}%
+    \label{#1}%
+    [\theparamrow]%
+}
+\newcommand{\paramref}[1]{parameter~[\ref{#1}]}
+
+{\scriptsize
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.78}
+\setcounter{paramrow}{0}
+
+\begin{longtable}{@{}
+>{\raggedright\arraybackslash}p{0.07\textwidth}
+>{\raggedright\arraybackslash}p{0.52\textwidth}
+>{\raggedright\arraybackslash}p{0.30\textwidth}
+>{\raggedleft\arraybackslash}p{0.05\textwidth}
+@{}}
+
+\caption{Parameter settings for the proposed construction.}
+\label{tab:parameters}
+\\
+
+$q$
+&
+\(\begin{gathered}
+q\ \text{prime},\\[-0.2em]
+n/q^{m-n+1}\le \mathrm{negl}(\lambda),\\[-0.2em]
+nk/q^{2mk-nk+1}\le \mathrm{negl}(\lambda),\\[-0.2em]
+nk/q^{\overline m-nk+1}\le \mathrm{negl}(\lambda)
+\end{gathered}\)
+&
+Modulus and full-rank/primitive conditions
+&
+\rowidx{param:q-prime}
+\\
+
+&
+\(\begin{gathered}
+q
+\ge
+O\!\left(\ell^{3/2}t^{7/2}\right)
+\cdot
+\omega\!\left(\log(2\ell t+\widetilde m)\lambda\log(t)\right),
+\\[-0.2em]
+q>
+4\!\left(
+\chi_1+
+\beta\chi_0\sqrt{2mk}
++
+(t+\overline m)\sigma_1\chi_0'
+\right)
+\end{gathered}\)
+&
+Modulus size and correctness requirement
+&
+\rowidx{param:q-bound}
+\\
+
+$n$
+&
+\(\ge \lambda\)
+&
+Base matrix row parameter
+&
+\rowidx{param:n}
+\\
+
+\(m_{\mathbf{G}}\)
+&
+\(= n\cdot \lceil \log q\rceil\)
+&
+Width of the gadget matrix \(\mathbf{G}_n\)
+&
+\rowidx{param:mG}
+\\
+
+\(m\)
+&
+\(= m_{\mathbf{G}}+n\)
+&
+Base matrix column parameter
+&
+\rowidx{param:m}
+\\
+
+\(\widetilde m\)
+&
+\(= nk\cdot \lceil \log q\rceil\)
+&
+Width of the gadget matrix \(\mathbf{G}_{nk}\)
+&
+\rowidx{param:mtilde}
+\\
+
+\(\overline m\)
+&
+\(\ge 3nk\lceil\log q\rceil\)
+&
+Width of \(H_{\mathsf{ro}}(r)\in\mathbb{Z}_q^{nk\times\overline m}\)
+&
+\rowidx{param:mbar}
+\\
+
+\(\ell\)
+&
+\(= poly(\lambda)\)
+&
+Batch size bound
+&
+\rowidx{param:ell}
+\\
+
+\(d\)
+&
+\(= O(\log|\mathcal I|)\)
+&
+Identity-space parameter
+&
+\rowidx{param:d}
+\\
+
+\(t\)
+&
+\(= \widetilde m(d+1)\)
+&
+Shifted multi-preimage sampler dimension
+&
+\rowidx{param:t}
+\\
+
+
+\(\eta_{\mathbf C}\)
+&
+\(\ge 8\sqrt{2mk}\cdot q^{n/(2m)+1/(mk)}\)
+&
+Upper bound of \(\eta_\varepsilon(\Lambda_q^\perp(\mathbf C))\)
+&
+\rowidx{param:eta-C}
+\\
+
+\(\eta_{\widetilde{\mathbf C}}\)
+&
+\(\ge 8\sqrt m\cdot q^{n/m+2/m}\)
+&
+Upper bound of \(\eta_\varepsilon(\Lambda_q^\perp(\mathbf C_j))\)
+&
+\rowidx{param:eta-Ctilde}
+\\
+
+\(\eta_{\mathbf G}\)
+&
+\(\ge \sqrt5\cdot \omega(\sqrt{\log(m_{\mathbf G})})\)
+&
+Upper bound of \(\eta_\varepsilon(\Lambda_q^\perp(\mathbf G_n))\)
+&
+\rowidx{param:eta-G}
+\\
+
+\(B_{\mathbf C}\)
+&
+\(\ge \eta_{\mathbf C}\cdot
+\sqrt{2m_{\mathbf G}(m-m_{\mathbf G})k}\)
+&
+Upper bound of \(\lVert\mathbf T_{\mathbf C}\rVert\)
+&
+\rowidx{param:B-C}
+\\
+
+\(B_{\widetilde{\mathbf C}}\)
+&
+\(\ge \eta_{\widetilde{\mathbf C}}\cdot
+\sqrt{2m_{\mathbf G}(m-m_{\mathbf G})}\)
+&
+Upper bound of \(\lVert\mathbf T_{\mathbf C_j}\rVert\)
+&
+\rowidx{param:B-Ctilde}
+\\
+
+\(B_{\mathbf U}\)
+&
+\(\ge s_{\max}(\mathbf S_{\mathrm{Cor}})\cdot\sqrt{m^2k}\)
+&
+Upper bound of \(\lVert\mathbf U_j\rVert\)
+&
+\rowidx{param:B-U}
+\\
+
+\(\mathbf S\)
+&
+\(=\mathbf S_{\mathrm{Cor}}\)
+&
+Gaussian width of \(\mathsf{PTrapGen}\)
+&
+\rowidx{param:S}
+\\
+
+\(\widetilde{\mathbf S}_i\)
+&
+\(\widetilde{\mathbf S}_i=\mathbf S_{\mathrm{Cor}}
+\quad \forall i\in[m(k-1)]\)
+&
+Assumption parameter in~\cite{AC:ALLW25}
+&
+\rowidx{param:S-tilde-cor}
+\\
+
+&
+\(\widetilde{\mathbf S}_i=\mathbf S_{\mathrm{Hon}}
+\quad
+\forall i\in[2m(k-1)]\setminus[m(k-1)]\)
+&
+&
+\rowidx{param:S-tilde-hon}
+\\
+
+\(\mathbf S_{\mathrm{Hon}}\)
+&
+\(\begin{gathered}
+2m(k-1)\text{-}\mathrm{SIS}_{\mathbb Z_q,n,2mk,
+\{\widetilde{\mathbf S}_i\}_{i},\alpha}
+\text{ is hard}
+\end{gathered}\)
+&
+Assumption parameter in~\cite{AC:ALLW25}
+&
+\rowidx{param:S-hon-SIS}
+\\
+
+&
+\(\begin{gathered}
+2m(k-1)\text{-}\mathrm{LWE}_{\mathbb Z_q,n,2mk,
+\{\widetilde{\mathbf S}_i\}_{i},\chi_0}
+\text{ is hard}
+\end{gathered}\)
+&
+&
+\rowidx{param:S-hon-LWE}
+\\
+
+&
+\(\max\{\eta_{\mathbf C},2q^{n/(2m)}\}
+< s_{\min}(\mathbf S_{\mathrm{Hon}})\)
+&
+&
+\rowidx{param:S-hon-smin}
+\\
+
+&
+\(s_{\max}(\mathbf S_{\mathrm{Hon}})
+\le
+\min\{q/\sqrt m,\;s_{\min}(\mathbf S_{\mathrm{Hon}})\}\)
+&
+&
+\rowidx{param:S-hon-smax}
+\\
+
+\(\mathbf S_{\mathrm{Cor}}\)
+&
+\(\begin{gathered}
+2m(k-1)\text{-}\mathrm{SIS}_{\mathbb Z_q,n,2mk,
+\{\widetilde{\mathbf S}_i\}_{i},\alpha}
+\text{ is hard}
+\end{gathered}\)
+&
+Assumption parameter in~\cite{AC:ALLW25}
+&
+\rowidx{param:S-cor-SIS}
+\\
+
+&
+\(\begin{gathered}
+2m(k-1)\text{-}\mathrm{LWE}_{\mathbb Z_q,n,2mk,
+\{\widetilde{\mathbf S}_i\}_{i},\chi_0}
+\text{ is hard}
+\end{gathered}\)
+&
+&
+\rowidx{param:S-cor-LWE}
+\\
+
+&
+\(s_{\min}(\mathbf S_{\mathrm{Cor}})
+\ge 2B_{\mathbf C}\omega(\sqrt{\log(2mk)})\)
+&
+&
+\rowidx{param:S-cor-smin-1}
+\\
+
+&
+\(s_{\min}(\mathbf S_{\mathrm{Cor}})
+\ge \eta_{\mathbf C}\)
+&
+&
+\rowidx{param:S-cor-smin-2}
+\\
+
+&
+\(\max\{\eta_{\mathbf C},2(a^{2m(k-1)}q^n)^{1/(2m)}\}
+<
+s_{\min}(\mathbf S_{\mathrm{Cor}})\)
+&
+&
+\rowidx{param:S-cor-smin-3}
+\\
+
+&
+\(s_{\max}(\mathbf S_{\mathrm{Cor}})
+\le
+\min\{q/\sqrt m,\;s_{\min}(\mathbf S_{\mathrm{Cor}})\}\)
+&
+&
+\rowidx{param:S-cor-smax}
+\\
+
+&
+\(\begin{aligned}[t]
+s_{\min}(\mathbf S_{\mathrm{Cor}})
+&\ge
+4\eta_{\widetilde{\mathbf C}}
+s_{\max}(\mathbf S_{\mathrm{Hon}})
+m\sqrt{(m-m_{\mathbf G})k(k-1)}
+\\[-0.2em]
+&\quad{}\cdot
+\omega\!\left(\sqrt{\log(2mk+m_{\mathbf G})}\right)
+\end{aligned}\)
+&
+&
+\rowidx{param:S-cor-basis-bound}
+\\
+
+\(\mathbf S_{\mathrm{BASIS}}\)
+&
+\(\displaystyle
+=
+\begin{pmatrix}
+\mathbf S_{\mathrm{Cor}} & 0 \\
+0 & \sigma_{\mathbf G}\mathbf I_{m_{\mathbf G}}
+\end{pmatrix},
+\quad
+\sigma_{\mathbf G}\ge \eta_{\mathbf G}\)
+&
+Parameter for BASIS-style simulation in~\cite{AC:ALLW25}
+&
+\rowidx{param:S-basis}
+\\
+
+\(\sigma_1\)
+&
+\(\begin{aligned}[t]
+\ge
+\max\Big\{&
+18(\ell t+\widetilde m+\ell\overline m)^{3/2}
+\log\!\big((\ell t+\widetilde m+\ell\overline m)\lambda\big)
+\log(\log q),
+\\[-0.2em]
+&
+2\overline m^{3/2}
+\cdot
+\omega\!\left(\log(\overline m+t)\right),
+\\[-0.2em]
+&
+\frac{q}{w}\log(2\ell t)
+\Big\}
+\end{aligned}\)
+&
+Gaussian parameter for explainable \(\mathsf{SampleLeft}\) in~\cite{AC:ALLW25}
+&
+\rowidx{param:sigma1}
+\\
+
+\(\sigma_2\)
+&
+\(\ge 2B_{\mathbf U}B_{\widetilde{\mathbf C}}
+\omega(\sqrt{\log m})\)
+&
+Gaussian width of \(\mathsf{PSampPre}\)
+&
+\rowidx{param:sigma2-bound-1}
+\\
+
+&
+\(\ge B_{\mathbf U}\eta_{\widetilde{\mathbf C}}\)
+&
+&
+\rowidx{param:sigma2-bound-2}
+\\
+
+&
+\(\ge 2B_{\mathbf U}\omega(\sqrt{\log(mk)})\)
+&
+&
+\rowidx{param:sigma2-bound-3}
+\\
+
+\(\beta\)
+&
+\(\ge k\sigma_2\sqrt{2mk}\)
+&
+Correctness bound for the reconstructed \(\mathsf{sbk}\)
+&
+\rowidx{param:beta}
+\\
+
+\(\alpha\)
+&
+\(\begin{gathered}
+2m(k-1)\text{-}\mathrm{SIS}_{\mathbb Z_q,n,2mk,
+\{\widetilde{\mathbf S}_i\}_{i},\alpha}
+\text{ is hard}
+\end{gathered}\)
+&
+SIS hardness-assumption parameter
+&
+\rowidx{param:alpha}
+\\
+
+\(\chi_0\)
+&
+\(\begin{gathered}
+2m(k-1)\text{-}\mathrm{LWE}_{\mathbb Z_q,n,2mk,
+\{\widetilde{\mathbf S}_i\}_{i},\chi_0}
+\text{ is hard}
+\end{gathered}\)
+&
+LWE indistinguishability-assumption parameter
+&
+\rowidx{param:chi0}
+\\
+
+\(\chi_2\)
+&
+\(\ge 8\sqrt{2mk}\cdot q^{n/(2m)+1/(mk)}\)
+&
+Gaussian parameter used in the PT indistinguishability proof
+&
+\rowidx{param:chi2}
+\\
+
+\(\chi_1\)
+&
+\(\ge \lambda^{\omega(1)}\chi_0\chi_2\cdot 2mk\)
+&
+Noise-flooding parameter for the PT challenge
+&
+\rowidx{param:chi1}
+\\
+
+\(\chi_0'\)
+&
+\(>
+O\!\left(
+\lambda^{\omega(1)}
+\chi_0mk\sqrt{t+\overline m}
+\right)\)
+&
+Noise-flooding parameter for hiding \(\mathbf e_2^{\top}\mathbf H\)
+&
+\rowidx{param:chi0-prime}
+\\
+
+\(w\)
+&
+\(\begin{gathered}
+\operatorname{rank}(\mathbf A_i)
+=
+\operatorname{rank}(H_{\mathsf{ro}}(r))
+=
+nk,
+\\[-0.2em]
+\lambda_1^\infty(\mathbf A_i),
+\lambda_1^\infty(H_{\mathsf{ro}}(r))
+\ge w
+\end{gathered}\)
+&
+Full-rank and minimum-distance condition for all \(i\in[\ell]\), \(r\in\mathcal I\)
+&
+\rowidx{param:w}
+\\
+
+
+\end{longtable}
+}
+\section{Security}
+
+We proof the security of scheme under the static corruption adversary with the highly-selective access to key query oracle. Let $L$ be the number of key querries that the adversary issues
+
+\begin{figure}[h]
+\centering
+\scriptsize
+\setlength{\fboxsep}{6pt}
+\setlength{\fboxrule}{0.4pt}
+\resizebox{\linewidth}{!}{%        <-- scales the box to the text width
+\fbox{%
+\begin{varwidth}{40cm}%           <-- large, so content sets its natural width
+\begin{pchstack}
+\procedure{{\normalsize$\mathsf{Exp}_{\Pi_{\mathsf{TBIBE}},\mathcal{A}}^{b}(1^\lambda,\ell,k,N)$}}{
+    \rule{0pt}{0.6em}\\[-0.5em]
+    (\mathcal{C},r^*) \gets \mathcal{A}(1^\lambda,1^\ell,1^k,1^N) \\
+    \mathsf{assert}\ \mathcal{C}\subset_{<k}[N] \\
+    (\mathsf{pk},(\mathsf{sk}_z)_{z\in[N]}) \gets \mathsf{TBIBE.Setup}(1^\lambda,1^\ell,1^k,1^N) \\
+    \mathcal{Q} := \emptyset \\
+    (T^*,z^*,m_0,m_1) \gets
+        \mathcal{A}^{\mathsf{PreDecO}(\cdot)}(\mathsf{pk},(\mathsf{sk}_z)_{z\in\mathcal{C}}) \\
+    (\mathsf{chal},\mathsf{ct}^*) \gets \mathsf{ChalO}(T^*,z^*,m_0,m_1) \\
+    b' \gets \mathcal{A}^{\mathsf{PreDecO}(\cdot)}(\mathsf{chal},\mathsf{ct}^*) \\
+    \pcreturn b'
+}
+\pchspace[1.2em]
+\begin{pcvstack}
+\procedure{{\normalsize$\mathsf{ChalO}(T^*,z^*,m_0,m_1)$}}{
+    \rule{0pt}{0.6em}\\[-0.5em]
+    \mathsf{assert}\ z^*\in T^*\setminus\mathcal{C} \\
+    \pcfor z\in T^*\setminus\{z^*\}: \\
+    \pcind \mathsf{sbk}^*_z \gets \mathsf{TBIBE.PreDec}(\mathsf{sk}_z,T^*,r^*) \\
+    \mathsf{chal} := (\mathsf{sbk}^*_z)_{z\in T^*\setminus\{z^*\}} \\
+    \mathsf{ct}^* \gets \mathsf{TBIBE.Enc}(\mathsf{pk},r^*,m_b) \\
+    \pcreturn (\mathsf{chal},\mathsf{ct}^*)
+        \hphantom{\mathsf{sbk}_{i,z}\gets \mathsf{TBIBE.PreDec}(\mathsf{sk}_z,T_i,\{r_{i,j}\}_{j\in[\ell]})}
+}
+\pcvspace[0.8em]
+\procedure{{\normalsize$\mathsf{PreDecO}(T_i,\{r_{i,j}\}_{j\in[\ell]})$}}{
+    \rule{0pt}{0.6em}\\[-0.5em]
+    \mathsf{assert}\ T_i\subseteq_k [N] \\
+    \pcif \{H(r_{i,j})\}_{j\in[\ell]}\ \text{not distinct} \pcthen \pcreturn \bot \\
+    \pcif r^*\in\{r_{i,j}\}_{j\in[\ell]} \pcthen \pcreturn \bot \\
+    \pcif \{r_{i,j}\}_{j\in[\ell]}\in\mathcal{Q} \pcthen \pcreturn \bot \\
+    \mathcal{Q} := \mathcal{Q}\cup\{\{r_{i,j}\}_{j\in[\ell]}\} \\
+    \pcfor z\in T_i: \\
+    \pcind \mathsf{sbk}_{i,z}\gets \mathsf{TBIBE.PreDec}(\mathsf{sk}_z,T_i,\{r_{i,j}\}_{j\in[\ell]}) \\
+    \pcreturn (\mathsf{sbk}_{i,z})_{z\in T_i}
+}
+\end{pcvstack}
+\end{pchstack}%
+\end{varwidth}%
+}}
+\caption{Selective security experiment for the TBIBE scheme.}
+\label{fig:TBIBE-security-experiment}
+\end{figure}
+
+\begin{theorem}
+    Suppose the parameters follow Table~\ref{tab:parameters}. Let $\mathcal{A}$ be a PPT adversary for the TBIBE security game (Figure~\ref{fig:TBIBE-security-experiment}), and $\mathcal{B}$ be the PPT adversaries for $(nk,2mk,\chi_0,\chi_1,\sigma_2)$$\epsilon$-indistinguishability security games (Theorem~\ref{theo:indistinguishibity_oneway}). THen we have:
+    $$\mathsf{Adv}_{\mathcal{A}}^{\mathsf{TBIBE}}(1^\lambda,1^\ell,1^k,1^N) \le \mathsf{Adv}_{\mathcal{B}}^{\mathsf{ind}}(nk,2mk,\chi_0,\chi_1,\sigma_2) + \mathsf{negl}(\lambda) + \epsilon/2$$
+    whenever $H_{\mathsf{sp}}, H_{\mathsf{ro}}$ are modeled as random oracles.
+\end{theorem}
+    
+
+First, we represent a series of highly selective hybrid games and prove they are statistically equivalent up to a negligible difference. Assume that we have a PTT adversary $\mathcal{A}$ that:
+
+\noindent\textbf{Hybrid 0:} This is the $\mathsf{Exp}_{\Pi_{\mathsf{TBIBE}},\mathcal{A}}^{b}$ in random oracle model
+\begin{itemize}
+    \item \textbf{Before the setup:}  The adversary $\mathcal{A}$ sends $(\mathcal{C}, r^*)$
+to the PTT challenger where $\mathcal{C} \subset_{<k} [N]$ is the corruption set and $r^*$ is the challenge identity. The challenger then checks whether $\|\mathcal{C}\| < k$ is satisfied. If not, the PPT challenge halt the game and output random bit
+
+\item \textbf{Setup:} The challenger caculates $\mathsf{crs}_{\mathsf{samp}} \leftarrow \mathsf{Gen}(1^\lambda,1^\ell)$. 
+    It then samples a tuple 
+    $(\mathbf{C},\mathbf{T}_{\mathbf{C}}) \leftarrow \mathsf{TrapGen}(1^{nk},q,2mk)$, 
+    as well as a uniformly random vector $\mathbf{u} \in \mathbb{Z}_q^{nk}$. 
+    It invokes $\mathsf{PTrapGen}(\mathbf{C}, \mathbf{T_C},j)$ to get $\mathsf{ptd}_j := (\mathbf{U}_j,\mathbf{C}_j, \mathbf{T}_{\mathbf{C}_j})$ for each $j \in T_i$ before sending 
+    $\mathsf{pk}:=(\mathsf{crs}_{\mathsf{samp}}, \mathbf{C},\mathbf{u})$ to $\mathcal{A} \text{ and } (\mathsf{ptd}_j)_{j \in \mathcal{C}}$. Finally, it initializes an empty set $\mathcal{Q}$.
+
+\item \textbf{Respond to pre-challenge queries:} For each $i \in [L]$, the challenger receives the incoming query $(T_i, \{r_{i,j}\}_{j\in[\ell]})$ in which $T_i$ is a set of active parties and $\{r_{i,j}\}_{j\in[\ell]}$ is an identity batch. Before proceeding, it first checks whether the inputs follow the below requirements:
+\begin{itemize}
+    \item All identities within the batch are collision-free under $H$
+    \item The challenge identity $r^*$ is absent from the batch.
+    \item The batch was not submitted in any prior query.
+\end{itemize}
+
+If all the above conditions pass, the challenger continues by adding this query to set $\mathcal{Q}$ and then calculating $H(r_{i,j})=\widetilde{h}_{i.j}$ for $j\in[\ell]$ and runs 
+    $(\mathbf{A}_{i,1},\ldots,\mathbf{A}_{i,\ell},\mathsf{td_{i}}=(\mathbf{A}_i,\mathbf{T}_{\mathbf{A_i}}))
+    =
+    \mathsf{Expand}(1^\lambda,1^\ell,\mathsf{crs}_{\mathsf{samp}},
+    (\widetilde{h}_i)_{i\in[\ell]})$ 
+    to obtain the matrices $\mathbf{A}$ and $\widehat{\mathbf{A}}$. 
+     To obtain $\mathsf{rb}$, it queries $H_{\mathsf{sp}}(\mathbf{A}_i,\mathbf{T}_{\mathbf{A}_i},(r_{i,j})_{j\in[\ell]},\mathbf{u},\sigma_1)$, and then invokes 
+    $\mathsf{SampleLeft}(\mathbf{A},\widehat{\mathbf{A}},
+    \mathbf{T}_{\mathbf{A}},\mathbf{h},\sigma_1;\mathsf{rb})$ 
+    to obtain $\widehat{\mathbf{c}}$. After that, it returns 
+    $\mathsf{sbk}_{z} \leftarrow 
+    \mathsf{PSamplePre}(\mathbf{C}_z,\mathsf{ptd}_z,T_z,
+    \mathbf{G}\widehat{\mathbf{c}},\sigma_2)$ for $z \in [N]$. In addition, for the challenge hint query, the challenger also does the same as above, except that it does not send the partial decryption key of the target party $z^*$.
+
+\item \textbf{Challenge:} $\mathcal{A}$ sends the target active set $T*$, the party $z^*$ which belongs to $T^*$, along with two messages $m_0, m_1$ to the challenger and receives back the ciphertext tuples $\mathsf{ct}^* \leftarrow \mathsf{TBIBE.Enc}(\mathsf{pk}, r^*, m_b)$. 
+
+\item \textbf{Post-challenge queries}: adversary $\mathcal{A}$ may again issue an arbitrary number of key computation queries as in the pre-challenge round.
+
+
+\item \textbf{Random oracle queries:}
+The challenger simulates the random oracle queries $H_{\mathsf{ro}}$ and $H_{\mathsf{sp}}$ consistently across all rounds as follows:
+\begin{itemize}
+    \item For $H_{\mathsf{ro}}$ queries: Upon receiving an identity $r$,challenger samples $\mathbf{H} \leftarrow \mathbb{Z}_q^{n \times \overline{m}}$, stores $H_{\mathsf{ro}} := H$, and then output $\mathbf{H}$
+    \item For $H_{\mathsf{sp}}$ queries: Upon receiving a tuple $(\mathbf{A},\mathbf{T_A},(r_i)_{i \in [\ell]}, \mathbf{u}, \sigma_1)$, challenger samples $\mathbf{h} \leftarrow \{0,1\}^{\rho_{\mathsf{SL}}}$, stores $H_{\mathsf{rp}} := h$, and then outputs $\mathbf{h}$
+\end{itemize}
+\item \textbf{Output:} At any point of time, $\mathcal{A}$ can halt the game and output $b' \in \{0,1\}$.
+
+\end{itemize} 
+\medskip
+\noindent\textbf{Hybrid 1:} The challenger samples uniformly random $[\mathbf{H_1}|\mathbf{H}_2]=\mathbf{H} \in \{0,1\}^{2mk \times (t + \overline{m})}$, where $\mathbf{H}_1\in \mathbb{Z}_q^{mk\times t},\mathbf{H}_2  \in \mathbb{Z}_q^{mk \times \overline{m}}$, and sets $\mathbf{A}_{r^*} = \mathbf{CH}_1$. After that, it calculates $\mathsf{crs_{samp}}$ by running  the algorithm $\mathsf{GenProg}(1^\lambda, 1^\ell, \tilde{h^*}, H(r^*),\mathbf{A}_{r^*})$.\\
+\medskip
+\noindent\textbf{Hybrid 2:} Challenger programs the random oracle $H_{\mathsf{ro}}$ so that $H_{\mathsf{ro}}(r^*):=\mathbf{CH_2}$ \\
+\medskip
+\noindent\textbf{Hybrid 3:} For every $H_{\mathsf{ro}}$ query with identity $r \neq r^*$, it programs $(H_{\mathsf{ro}},\mathbf{T}_r) \leftarrow \mathsf{TrapGen}(1^{nk},q,\overline{m})$\\
+\medskip
+\noindent\textbf{Hybrid 4:} When the adversary makes a fresh query
+\((\mathbf{A},\mathbf{T}_{\mathbf{A}},\widehat{\mathbf{A}},\widehat{\mathbf{B}},(r_i)_{i\in[\ell]},\mathbf{u},\sigma_1)\) to the random oracle \(H_{\mathsf{sp}}\), the challenger first reconstructs the matrices
+\(\widehat{\mathbf{A}}\) and \(\mathbf{A}\) using
+\(\mathsf{crs}_{\mathsf{samp}}\), \(\widehat{\mathbf{A}}\), \(\widehat{\mathbf{B}}\), and the identity tags
+\((r_i)_{i\in[\ell]}\). It then sets
+\(\mathbf{F}:=[\mathbf{A}\mid\widehat{\mathbf{A}}]\) and
+\(\mathbf{h}:=(\mathbf{u},\ldots,\mathbf{u})\in\mathbb{Z}_q^{\ell n}\), and samples
+\(\mathbf{v}\leftarrow \mathbf{F}_{\sigma_1}^{-1}(\mathbf{h})\).
+Next, the challenger computes
+\(\mathsf{rb}\gets
+\mathsf{ExplainSL}(1^\kappa,\mathbf{A},\widehat{\mathbf{A}},\mathbf{T}_{\mathbf{A}},
+\mathbf{h},\mathbf{v},\sigma_1)\), with precision parameter $\kappa:=2q_\mathsf{sp}/\epsilon$.
+Finally, it stores the tuple
+\((\mathbf{A},\mathbf{T}_{\mathbf{A}},
+(r_i)_{i\in[\ell]},\mathbf{u},\sigma_1,\mathbf{v},\mathsf{rb})\)
+and returns \(\mathsf{rb}\) to \(\mathcal{A}\).
+\noindent\begin{lemma}
+Suppose the parameters follow Table~\ref{tab:parameters}. Then
+\textbf{Hybrid 0} $\approx_s$ \textbf{Hybrid 1}.
+\end{lemma}
+
+\noindent\begin{proof}
+The only difference between \textbf{Hybrid 0} and \textbf{Hybrid 1} is the
+generation of the sampler CRS and the matrix associated with the challenge
+identity $r^\ast$.
+
+In \textbf{Hybrid 0}, the challenger samples
+$
+    \mathsf{crs}_{\mathsf{samp}}
+    \gets
+    \mathsf{Gen}(1^\lambda,1^\ell,1^d),
+$
+and the challenge matrix is obtained honestly as
+\[
+    \mathbf A_{r^\ast}
+    :=
+    \mathsf{ExpandLocal}
+    (1^\lambda,\mathsf{crs}_{\mathsf{samp}},H(r^\ast)).
+\]
+In \textbf{Hybrid 1}, the challenger first samples
+$
+    \mathbf H_1 \gets \{0,1\}^{2mk\times t}
+$
+and sets
+$
+    \mathbf A_{r^\ast}:=\mathbf C\mathbf H_1
+    \in \mathbb Z_q^{nk\times t}.
+$
+It then computes the programmed CRS
+\[
+    \mathsf{crs}_{\mathsf{samp}}^\ast
+    :=
+    \mathsf{GenProg}
+    (1^\lambda,1^\ell,1^d,H(r^\ast),\mathbf A_{r^\ast}).
+\]
+
+We first show that the programmed challenge matrix
+$\mathbf A_{r^\ast}=\mathbf C\mathbf H_1$ is statistically close to a
+uniform matrix in $\mathbb Z_q^{nk\times t}$. By Table~\ref{tab:parameters},
+we have
+$
+    \mathbf C\in \mathbb Z_q^{nk\times 2mk}.
+$
+Moreover, since
+$
+    m_{\mathbf G}=n\lceil\log q\rceil,
+    m=m_{\mathbf G}+n,
+$
+we have
+$
+    2mk
+    =
+    2k(m_{\mathbf G}+n)
+    \ge
+    2nk\log q.
+$
+Thus the leftover hash lemma applies to the matrix
+$\mathbf C\in\mathbb Z_q^{nk\times 2mk}$ and to each binary column of
+$\mathbf H_1$. Therefore,
+$
+    (\mathbf C,\mathbf C\mathbf h)
+    \approx_s
+    (\mathbf C,\mathbf a),
+$
+where $\mathbf h\gets\{0,1\}^{2mk}$ and
+$\mathbf a\gets\mathbb Z_q^{nk}$. Applying this argument independently to
+the $t$ columns of $\mathbf H_1$, and using that $t=poly(\lambda)$ by
+Table~\ref{tab:parameters}, gives
+$
+    (\mathbf C,\mathbf C\mathbf H_1)
+    \approx_s
+    (\mathbf C,\mathbf A),
+$
+where
+$
+    \mathbf A\gets\mathbb Z_q^{nk\times t}.
+$
+
+Next, by the somewhere programmability of $\Pi_{\mathsf{samp}}$ stated in
+Lemma~\ref{lem:smps}, if the programmed matrix
+$\mathbf A_{r^\ast}$ is uniform over $\mathbb Z_q^{nk\times t}$, then
+$
+    \mathsf{GenProg}
+    (1^\lambda,1^\ell,1^d,H(r^\ast),\mathbf A_{r^\ast})
+    \approx_s
+    \mathsf{Gen}(1^\lambda,1^\ell,1^d).
+$
+Furthermore, the same lemma guarantees that the programmed opens
+correctly at the challenge identity, namely
+$
+    \mathsf{ExpandLocal}
+    (1^\lambda,\mathsf{crs}_{\mathsf{samp}}^\ast,H(r^\ast))
+    =
+    \mathbf A_{r^\ast}.
+$
+
+The table conditions used here are precisely:
+\[
+    q \text{ is prime},\qquad
+    n\ge \lambda,\qquad
+    m_{\mathbf G}=n\lceil\log q\rceil,\qquad
+    m=m_{\mathbf G}+n,
+\]
+which imply
+$
+    2mk\ge 2nk\log q,
+$
+allowing the leftover hash lemma to be applied to
+$\mathbf C\in\mathbb Z_q^{nk\times 2mk}$. In addition,
+$
+    t=\widetilde m(d+1)=poly(\lambda)
+$
+ensures that the union bound over the $t$ columns of
+$\mathbf C\mathbf H_1$ preserves negligible statistical distance.
+
+Combining the leftover-hash argument with the somewhere programmability of
+$\Pi_{\mathsf{samp}}$, the joint view of the adversary in \textbf{Hybrid 0}
+is statistically indistinguishable from its view in \textbf{Hybrid 1}.
+Hence,
+$
+    \textbf{Hybrid 0}\approx_s \textbf{Hybrid 1}.
+$
+\end{proof}
+
+\noindent\begin{lemma}
+Suppose the parameters follow Table~\ref{tab:parameters}. Then, for all
+PPT adversaries $\mathcal A$, \textbf{Hybrid 1} $\approx_s$ \textbf{Hybrid 2}.
+
+\end{lemma}
+
+\noindent\begin{proof}
+The only difference between \textbf{Hybrid 1} and \textbf{Hybrid 2} is the
+way the random-oracle value $H_{\mathsf{ro}}(r^\ast)$ is generated. In
+\textbf{Hybrid 1}, it is sampled uniformly as
+$
+    H_{\mathsf{ro}}(r^\ast)
+    \gets
+    \mathbb Z_q^{nk\times \overline m},
+$
+whereas in \textbf{Hybrid 2}, the challenger samples
+$
+    \mathbf H_2 \gets \{0,1\}^{2mk\times \overline m}
+$
+and programs
+$
+    H_{\mathsf{ro}}(r^\ast)
+    :=
+    \mathbf C\mathbf H_2.
+$
+
+By the parameter choice in Table~\ref{tab:parameters}, the matrix
+$\mathbf C\in \mathbb Z_q^{nk\times 2mk}$ has enough columns for
+Lemma~\ref{lem:leftoverHash} to apply. Hence, for each column
+$\mathbf h\gets\{0,1\}^{2mk}$ of $\mathbf H_2$, we have
+$
+    (\mathbf C,\mathbf C\mathbf h)
+    \approx_s
+    (\mathbf C,\mathbf c),
+$
+where $\mathbf c\gets\mathbb Z_q^{nk}$ is uniform.
+
+Applying this argument to all $\overline m=poly(\lambda)$ columns of
+$\mathbf H_2$ and taking a union bound, we obtain
+$
+    (\mathbf C,\mathbf C\mathbf H_2)
+    \approx_s
+    (\mathbf C,\mathbf C'),
+$
+where
+$
+    \mathbf C'\gets\mathbb Z_q^{nk\times \overline m}.
+$
+Therefore, the programmed value $\mathbf C\mathbf H_2$ in
+\textbf{Hybrid 2} is statistically indistinguishable from the uniform
+value of $H_{\mathsf{ro}}(r^\ast)$ in \textbf{Hybrid 1}. All other parts
+of the adversary's view are generated identically, so
+$
+    \textbf{Hybrid 1}\approx_s \textbf{Hybrid 2}.
+$
+\end{proof}
+\noindent\begin{lemma}
+Suppose that $n\ge \lambda$ and
+$\overline{m}\ge O(nk\log q)$. Then, for all PPT adversaries
+$\mathcal A$,
+$
+    \textbf{Hybrid 2} \approx_s \textbf{Hybrid 3}.
+$
+\end{lemma}
+
+\noindent\begin{proof}
+The only difference between \textbf{Hybrid 2} and \textbf{Hybrid 3} is how
+the random-oracle values $H_{\mathsf{ro}}(r)$ are generated for identities
+$r\neq r^\ast$. In \textbf{Hybrid 2}, these values are sampled uniformly as
+$
+    H_{\mathsf{ro}}(r)
+    \gets
+    \mathbb Z_q^{nk\times \overline m},
+$
+whereas in \textbf{Hybrid 3}, they are generated together with gadget
+trapdoors:
+$
+    (H_{\mathsf{ro}}(r),\mathbf T_r)
+    \gets
+    \mathsf{TrapGen}(1^\lambda,1^{nk},1^{\overline m}).
+$
+
+By the parameter choice in Table~\ref{tab:parameters}, we have
+$
+    \overline m \ge O(nk\log q),
+$
+which is sufficient for the gadget-trapdoor generation lemma
+(Lemma~\ref{lem:gadget_trapdoor}) to apply with row dimension $nk$ and
+column dimension $\overline m$. Hence, the matrix output by
+$\mathsf{TrapGen}$ is statistically close to uniform:
+$
+    H_{\mathsf{ro}}(r)
+    \approx_s
+    \mathbf H,
+    \mathbf H\gets \mathbb Z_q^{nk\times \overline m}.
+$
+
+Therefore, for each identity $r\neq r^\ast$, the distribution of
+$H_{\mathsf{ro}}(r)$ in \textbf{Hybrid 3} is statistically indistinguishable
+from its distribution in \textbf{Hybrid 2}. The trapdoor $\mathbf T_r$ is
+only kept internally by the challenger and is not given to the adversary.
+
+Since $\mathcal A$ makes only polynomially many random-oracle queries, a
+union bound over all such queries preserves negligible statistical distance.
+All other parts of the adversary's view are identical in the two hybrids.
+Thus,
+$
+    \textbf{Hybrid 2} \approx_s \textbf{Hybrid 3}.
+$
+\end{proof}
+\noindent\begin{lemma}
+Suppose the parameters follow Table~\ref{tab:parameters}. In particular,
+assume that
+$
+    q>2,
+    \rho
+    =
+    \operatorname{poly}
+    (\lambda,nk,\ell t+\widetilde m,\ell\overline m,\log q),
+$
+and for every matrix $\mathbf A$ appearing in a pre-decryption query,
+$
+    \sigma_1
+    \ge
+    \|\mathbf T_{\mathbf A}\|_{\infty}
+    \cdot
+    \sigma_{\mathsf{loss}}.
+$
+Here, since the trapdoor $\mathbf T_{\mathbf A}$ generated by the sampler has
+$\|\mathbf T_{\mathbf A}\|_{\infty}=1$, it suffices that
+$
+    \sigma_1
+    \ge
+    \sigma_{\mathsf{loss}},
+$
+where
+$
+    \sigma_{\mathsf{loss}}
+    =
+    18(\ell t+\widetilde m+\ell\overline m)^{3/2}
+    \log\!\bigl((\ell t+\widetilde m+\ell\overline m)\lambda\bigr)
+    \log(\log q).
+$
+Then, for all PPT adversaries $\mathcal A$,
+$
+    \Delta(\textbf{Hybrid 4},\textbf{Hybrid 5})
+    \le
+    \operatorname{negl}(\lambda)+\epsilon/2.
+$
+\end{lemma}
+
+\noindent\begin{proof}
+The only difference between \textbf{Hybrid 4} and \textbf{Hybrid 5} is how
+the pair $(\mathbf v,\mathbf{rb})$ associated with an
+$H_{\mathsf{sp}}$ query is generated.
+
+Let
+$
+    \Pi_{\mathsf{SL}}
+    =
+    (\mathsf{SampleLeft},\mathsf{ExplainSL})
+$
+be the explainable sampler from Theorem~\ref{the:explainable}, instantiated
+with Gaussian width $\sigma_1$. For a pre-decryption query, define
+$
+    \mathbf F := [\mathbf A\mid \widehat{\mathbf A}],
+$
+where
+$
+    \mathbf A\in
+    \mathbb Z_q^{\ell nk\times(\ell t+\widetilde m)}
+   \text{ and }
+    \widehat{\mathbf A}\in
+    \mathbb Z_q^{\ell nk\times \ell\overline m}.
+$
+Hence,
+$
+    \mathbf F
+    \in
+    \mathbb Z_q^{
+        \ell nk\times(\ell t+\widetilde m+\ell\overline m)
+    }.
+$
+By the choice of $\sigma_1$ in Table~\ref{tab:parameters}, the explainable
+sampler is applicable to this matrix width.
+
+In \textbf{Hybrid 4}, the challenger first samples
+$
+    \mathbf v
+    \leftarrow
+    \mathbf F^{-1}_{\sigma_1}(\mathbf h),
+$
+and then computes
+$
+    \mathbf{rb}'
+    :=
+    \mathsf{ExplainSL}
+    \bigl(
+        1^\kappa,
+        \mathbf A,
+        \widehat{\mathbf A},
+        \mathbf T_{\mathbf A},
+        \mathbf h,
+        \mathbf v,
+        \sigma_1
+    \bigr).
+$
+Thus the relevant distribution is
+\[
+    \mathcal D_0
+    :=
+    \left\{
+        (\mathbf v,\mathbf{rb}') :
+        \mathbf v\leftarrow \mathbf F^{-1}_{\sigma_1}(\mathbf h),
+        \;
+        \mathbf{rb}'
+        :=
+        \mathsf{ExplainSL}
+        (1^\kappa,\mathbf A,\widehat{\mathbf A},
+        \mathbf T_{\mathbf A},\mathbf h,\mathbf v,\sigma_1)
+    \right\}.
+\]
+
+By correctness of the explainable sampler, sampling
+$
+    \mathbf v
+    \leftarrow
+    \mathbf F^{-1}_{\sigma_1}(\mathbf h)
+$
+is statistically close to sampling uniform coins
+$\mathbf{rb}\leftarrow\{0,1\}^{\rho}$ and outputting
+$
+    \mathbf v
+    :=
+    \mathsf{SampleLeft}
+    (
+        \mathbf A,
+        \widehat{\mathbf A},
+        \mathbf T_{\mathbf A},
+        \mathbf h,
+        \sigma_1;
+        \mathbf{rb}
+    ).
+$
+Therefore,
+$
+    \mathcal D_0 \approx_s \mathcal D_1,
+$
+where
+\[
+\begin{aligned}
+    \mathcal D_1
+    :=
+    \left\{
+        (\mathbf v,\mathbf{rb}') :
+        \mathbf{rb}\leftarrow\{0,1\}^{\rho},
+        \;
+        \mathbf v :=
+        \mathsf{SampleLeft}
+        (
+            \mathbf A,
+            \widehat{\mathbf A},
+            \mathbf T_{\mathbf A},
+            \mathbf h,
+            \sigma_1;
+            \mathbf{rb}
+        ),
+        \right.\\
+        \left.
+        \mathbf{rb}'
+        :=
+        \mathsf{ExplainSL}
+        (
+            1^\kappa,
+            \mathbf A,
+            \widehat{\mathbf A},
+            \mathbf T_{\mathbf A},
+            \mathbf h,
+            \mathbf v,
+            \sigma_1
+        )
+    \right\}.
+\end{aligned}
+\]
+
+Next, by the explainability property of $\Pi_{\mathsf{SL}}$, the randomness
+recovered by $\mathsf{ExplainSL}$ is statistically close to fresh uniform
+coins. Hence,
+\[
+    \Delta(\mathcal D_1,\mathcal D_2)
+    \le
+    \operatorname{negl}(\lambda)+\frac{1}{\kappa},
+\]
+where
+$
+    \mathcal D_2
+    :=
+    \left\{
+        (\mathbf v,\mathbf{rb}') :
+        \mathbf{rb}'\leftarrow\{0,1\}^{\rho},
+        \;
+        \mathbf v :=
+        \mathsf{SampleLeft}
+        (
+            \mathbf A,
+            \widehat{\mathbf A},
+            \mathbf T_{\mathbf A},
+            \mathbf h,
+            \sigma_1;
+            \mathbf{rb}'
+        )
+    \right\}.
+$\\
+This is exactly the distribution used in \textbf{Hybrid 5}, where
+$H_{\mathsf{sp}}$ returns fresh random coins.
+
+Finally, set
+$
+    \kappa := \frac{2q_{\mathsf{sp}}}{\epsilon}.
+$, where $q_{\mathsf{sp}}$ is the number of $H_{\mathsf{sp}}$ queries.
+Since $q_{\mathsf{sp}}=\operatorname{poly}(\lambda)$, this choice keeps
+$\kappa=\operatorname{poly}(\lambda)$. Taking a union bound over all
+$q_{\mathsf{sp}}$ random-oracle queries to $H_{\mathsf{sp}}$, we obtain
+\[
+\begin{aligned}
+    \Delta(\textbf{Hybrid 4},\textbf{Hybrid 5})
+    &\le
+    q_{\mathsf{sp}}
+    \left(
+        \operatorname{negl}(\lambda)+\frac{1}{\kappa}
+    \right)  \\
+    &=
+    \operatorname{negl}(\lambda)+\frac{\epsilon}{2}.
+\end{aligned}
+\]
+This proves the claim.
+\end{proof}
+Now, we are ready to construct a threshold adversary $\mathcal{B}$ wrapping around the adversary $\mathcal{A}$. For the sake of contradiction, assume that we have an y $\mathcal{A}$ that can distinguish between the real highly selective experiment and the one where the ciphertexts are purely uniform random vectors. We construct a PPT $\mathcal{B}^\mathcal{A}$ against the $(\chi_0,\chi_1)$. Let  $\mathcal{B}^\mathcal{A}$ proceed as follows:
+
+
+\noindent\textbf{Hybrid 5:}
+\begin{itemize}
+    \item $\text{Receive from } \mathcal{A} \text{ a set } C \subset [N] \text{ of corrupt users, a set }
+\{(T_i,(r_{i,j})_{j \in \ell})\}_{i \in [L]}$ of all secret-key queries, and a challenge $(T^\ast, z^\ast, r^\ast).$
+$\text{W.l.o.g., assume } |C| = k - 1.$
+    \item Pass $C$ to the PT indistinguishability challenger, and receive $(\mathsf{crs_{samp}}, \mathbf{\tilde{A}},\mathbf{\tilde{B}},\mathbf{C},\mathbf{u})$ and partial trapdoors 
+    $(\mathbf{U}_j)_{j \in C}$. Let $\mathsf{mpk} := \mathbf{A}$ and 
+    $\mathsf{msk}_j := \mathsf{ptd}_j$ for all $j \in C$.
+
+
+\item $\mathcal{B}$ pass $(T^*, z^*)$ to PT challenger, and receive $\left((\mathbf{x}_j^*)_{j\in T^*\setminus\{z^*\}}, \mathbf{y}^*, \mathbf{ch}_0, ch_1\right)$  and then set $\mathsf{sbk}^*_j := \mathbf{x}^*_j, \mathbf{u} := \mathbf{y}^*$. It then obtain challenge ciphertext by setting $(\mathsf{ct}[0],\mathsf{ct}[1],\mathsf{ct}[2]) = (ch_1 + m_b\cdot\lfloor q/2\rfloor,\mathbf{ch}_0, \mathbf{ch}_0\cdot \mathbf{H} + \mathbf{e}')$, where $\mathbf{e}'\leftarrow\mathcal{D}_{\mathbb{Z},\chi'}^{t + \overline{m}}$
+
+\item $\mathcal{B}$ first checks $r^* \in (r_{i,j})_{j \in [\ell]}$ and makes decision as following cases:
+\item \textbf{Case 1}: Suppose $r^* = r_{i,j^*}$ for some index $j^*$. 
+\begin{itemize}
+    \item $\mathcal{B}$ samples
+$\mathbf{v}_{i,j^*}=\operatorname{col}(\mathbf{v}_{i,j^*}^1,\mathbf{v}_{i,j^*}^2)
+\leftarrow D_{\mathbb{Z}_q^{2t},\sigma_1}$ and sets
+$\mathbf{c}_i:=-\mathbf{F}_{r^*}\mathbf{v}_{i,j^*}+\mathbf{u}$, where
+$\mathbf{F}_{r^*}=[\mathbf{A}_{r^*}| H_{\mathsf{ro}}(r^*)]$. It then samples $\widehat{\mathbf{c}_i}\leftarrow \mathbf{G}_{\sigma_1}^{-1}(\mathbf{c}_i)$
+using the algorithm in Lemma~\ref{lem:gaget_matrix_sam} and sets $\mathbf{sbk}_i := \bot$.
+
+\item For the remaining $j \in [\ell], j \neq j^*$, which means $r_{i,j} \neq r^*$, it finds $\mathbf{v}_{i,j}$ by calling
+$\mathsf{SampleLeft}\!\left(
+H_{\mathsf{ro}}(r_{i,j}),
+\mathbf{A}_{r_{i,j}},
+\mathbf{H}_2,
+\mathbf{T}_{r_{i,j}},
+\mathbf{u}-\mathbf{c}_i,
+\sigma_1
+\right)$ and then permutes the output components to obtain $\mathbf{v}_{i,j}:= \operatorname{col}(\mathbf{v}_{i,j}^1,\mathbf{v}_{i,j}^2)$
+\end{itemize}
+\item \textbf{Case 2}: $r^* \notin (r_{i,j})_{j \in [\ell]}$
+\begin{itemize}
+    \item Simulator $\mathcal{B}$ queries $\mathsf{PSampPreO}(T_i)$ to obtain 
+    $((\mathbf{x}_{i,j})_{j \in T_i}, \mathbf{y}_i)$, where $\mathbf{y}_i$ is uniform. Let $\mathsf{sbk}_{i,j} := \mathbf{x}_{i,j}$, $\mathbf{c}_{i} := \mathbf{y}_{i}$, challenger  derives $\mathsf{sbk}_i$ by calling $\mathsf{TBIBE.Rec}((\mathsf{sbk_{i,j}})_{j \in T_i})$. It then samples $\mathbf{\hat{c}_i} \leftarrow \mathbf{G}^{-1}_{\sigma_1}(\mathbf{c}_i)$ using the algorithm. 
+    \item For all $j \in [\ell]$, it invokes $\mathsf{SampleLeft}\!\left(
+H_{\mathsf{ro}}(r_{i,j}),
+\mathbf{A}_{r_{i,j}},
+\mathbf{H}_2,
+\mathbf{T}_{r_{i,j}},
+\mathbf{u}-\mathbf{c}_i,
+\sigma_1
+\right)$ and then permutes the output to obtain $\mathbf{v}_{i,j}:= \operatorname{col}(\mathbf{v}_{i,j}^1,\mathbf{v}_{i,j}^2)$.
+\end{itemize}
+
+
+
+
+    
+    
+\item After that, the challenger sets
+\(\mathbf{v}_i :=
+\mathsf{col}(\mathbf{v}_{i,1}^{1},\ldots,\mathbf{v}_{i,\ell}^{1},
+\widehat{\mathbf{c}},
+\mathbf{v}_{i,1}^{2},\ldots,\mathbf{v}_{i,\ell}^{2})\).
+It then obtains
+\(\mathsf{rb}_i :=
+\mathsf{ExplainSL}(1^\kappa,
+\mathbf{A}_i,
+\widehat{\mathbf{A}}_i,
+\mathbf{T}_{\mathbf{A}_i},
+\mathbf{h}=(\mathbf{u},\ldots,\mathbf{u}),
+\mathbf{v}_i,
+\sigma_1)\).
+Finally, the challenger stores
+\(\mathsf{st}_i :=
+(\mathbf{A}_i,
+\mathbf{T}_{\mathbf{A}_i},
+((r_j)_{j\in[\ell]})_i,
+T_i,
+\mathbf{u},
+\sigma_1,
+\mathbf{v}_i,
+\mathbf{sbk}_i,
+\mathsf{rb}_i)\).
+
+\item Upon any $\mathsf{rb}$ query from $\mathcal{A}$, if $\mathsf{rb} = \bot$, simulator samples a random $\mathbf{y} = \{0,1\}^\rho$ and set $\mathsf{rb} = y$. It return $\mathsf{rb}$ to $\mathcal{A}$
+\end{itemize}
+
+\noindent\textbf{Hybrid 6:} Challenger replace $c_1 \in \mathbb{Z}_q$
+
+\noindent\begin{lemma}
+Suppose the parameters follow Table~\ref{tab:parameters}. In particular,
+assume that:
+\begin{enumerate}
+    \item By \paramref{param:q-prime}, $q>2$; by
+    \paramref{param:t} and \paramref{param:mbar}, the dimensions
+    $t$ and $\overline m$ are polynomially bounded; by
+    \paramref{param:sigma1}, $\sigma_1\ge \omega(\sqrt{\log(nk)})$;
+    and by \paramref{param:sigma2-bound-3},
+    $\sigma_2 \ge 2B_{\mathbf U}\cdot \omega(\sqrt{\log(mk)})$.
+
+    \item By \paramref{param:sigma1}, for all identity tags $r$ appearing
+    in pre-decryption queries,
+    $\sigma_1
+    \ge
+    2\overline m^{3/2}\|\mathbf T_r\|_{\infty}
+    \cdot \omega(\log(\overline m+t))$,
+    where $\mathbf T_r$ is the gadget trapdoor for
+    $H_{\mathsf{ro}}(r)$ generated by $\mathsf{TrapGen}$.
+
+    \item By \paramref{param:w}, the matrices $\mathbf A_{r_i}$ and
+    $H_{\mathsf{ro}}(r_i)$ are full-rank of rank $nk$,
+    $\lambda_1^\infty(\mathbf A_{r_i})$, and $
+    \lambda_1^\infty(H_{\mathsf{ro}}(r_i))\ge w$.
+    Moreover, by \paramref{param:sigma1},
+    $\sigma_1\ge (q/w)\log(2\ell t)$.
+
+    \item By \paramref{param:chi0-prime}, the noise-flooding parameter
+    satisfies
+    $\chi_0'
+    >
+    O(\lambda^{\omega(1)}\chi_0mk\sqrt{t+\overline m})$.
+\end{enumerate}
+Then, for all PPT adversaries $\mathcal A$,
+\textbf{Hybrid 4} $\approx_s$ \textbf{Hybrid 5}.
+\end{lemma}
+
+\begin{proof}
+The transition from \textbf{Hybrid 4} to \textbf{Hybrid 5} consists of
+statistically simulating the challenge ciphertext component $\mathsf{ct}[3]$
+and the corresponding $H_{\mathsf{sp}}$ responses.
+
+First, consider the challenge ciphertext. In \textbf{Hybrid 4}, the simulator
+constructs
+$\mathsf{ct}[3]
+:=
+\mathbf{ch}_0^{\top}\mathbf H+\mathbf e'
+=
+\mathbf s^{\top}\mathbf C\mathbf H
++
+\mathbf e_2^{\top}\mathbf H
++
+\mathbf e'$,
+where
+$\mathbf e'\leftarrow D_{\mathbb Z,\chi_0'}^{t+\overline m}$.
+Note that, we have
+$\mathbf H\in\{0,1\}^{2mk\times(t+\overline m)}$ and 
+$\mathbf e_2\leftarrow D_{\mathbb Z,\chi_0}^{2mk}$.
+Therefore, using $\|\mathbf H\|\le \|\mathbf H\|_F$, we get
+$\|\mathbf e_2^{\top}\mathbf H\|
+\le
+\|\mathbf e_2\|\cdot\|\mathbf H\|
+\le
+O(\chi_0\sqrt{2mk})\cdot\sqrt{2mk(t+\overline m)}
+=
+O(\chi_0mk\sqrt{t+\overline m})$.
+By \paramref{param:chi0-prime} and Lemma~\ref{lem:̉noise_flooding},
+$\mathbf e_2^{\top}\mathbf H+\mathbf e'
+\approx_s
+D_{\mathbb Z,\chi_0'}^{t+\overline m}$.
+Hence, the distribution of $\mathsf{ct}[3]$ in \textbf{Hybrid 4} is
+statistically close to the corresponding distribution in \textbf{Hybrid 5}.
+
+It remains to argue that the simulator can answer the relevant
+$H_{\mathsf{sp}}$ and pre-decryption queries consistently. Consider a
+pre-decryption query containing identities $(r_i)_{i\in[\ell]}$.
+
+\noindent\textbf{Case 1: $r^\ast=r_{i^\ast}$ for some $i^\ast$.}
+We have
+$\mathbf H=[\mathbf H_1\mid \mathbf H_2]$ with
+$\mathbf H_1\in\{0,1\}^{2mk\times t}$ and
+$\mathbf H_2\in\{0,1\}^{2mk\times\overline m}$.
+Since $H_{\mathsf{ro}}(r^\ast)=\mathbf C\mathbf H_2$ and
+$\mathbf A_{r^\ast}=\mathbf C\mathbf H_1$, we have
+$\mathbf F_{r^\ast}
+:=
+[\mathbf A_{r^\ast}\mid H_{\mathsf{ro}}(r^\ast)]
+=
+[\mathbf C\mathbf H_1\mid \mathbf C\mathbf H_2]$.
+The simulator samples $\mathbf v_{i^\ast}$ and defines
+$\mathbf c:=-\mathbf F_{r^\ast}\mathbf v_{i^\ast}+\mathbf u$.
+By the full-rank and minimum-distance condition in \paramref{param:w},
+together with the lower bound
+$\sigma_1\ge(q/w)\log(2\ell t)$ from \paramref{param:sigma1},
+the value $\mathbf c$ is statistically close to uniform over
+$\mathbb Z_q^{nk}$. Therefore, by Lemma~\ref{lem:gaget_matrix_sam},
+$\widehat{\mathbf c}\leftarrow \mathbf G_{\sigma_1}^{-1}(\mathbf c)$
+is statistically close to
+$D_{\mathbb Z^{\widetilde m},\sigma_1}$.
+
+\noindent\textbf{Case 2: $r^\ast\notin (r_i)_{i\in[\ell]}$.}
+In this case, the simulator obtains a uniformly distributed target
+$\mathbf c$ from the simulated partial-preimage oracle. Again, by
+Lemma~\ref{lem:gaget_matrix_sam},
+$\widehat{\mathbf c}\leftarrow \mathbf G_{\sigma_1}^{-1}(\mathbf c)$
+is statistically close to
+$D_{\mathbb Z^{\widetilde m},\sigma_1}$.
+
+In both cases, for every identity $r_i\neq r^\ast$, the simulator uses the
+trapdoor $\mathbf T_{r_i}$ of $H_{\mathsf{ro}}(r_i)$ and runs
+$\mathsf{SampleLeft}
+(H_{\mathsf{ro}}(r_i),\mathbf A_{r_i},\mathbf T_{r_i},
+\mathbf u-\mathbf c,\sigma_1)$.
+By \paramref{param:sigma1}, the Gaussian parameter $\sigma_1$ is large
+enough for gadget-trapdoor-based $\mathsf{SampleLeft}$. Hence, after the
+corresponding coordinate permutation, the output is statistically close to
+$\mathbf F_{r_i,\sigma_1}^{-1}(\mathbf u-\mathbf c)$, where
+$\mathbf F_{r_i}:=[\mathbf A_{r_i}\mid H_{\mathsf{ro}}(r_i)]$.
+The coordinate permutation does not change the discrete Gaussian distribution,
+since permutation matrices are orthogonal.
+
+Therefore, the vector
+$\operatorname{col}
+(\mathbf v_1^1,\ldots,\mathbf v_\ell^1,
+\widehat{\mathbf c},
+\mathbf v_1^2,\ldots,\mathbf v_\ell^2)$
+is statistically close to a sample from
+$\mathbf F_{\sigma_1}^{-1}(\mathbf h)$, where
+$\mathbf F:=[\mathbf A\mid\widehat{\mathbf A}]$ and
+$\mathbf h:=(\mathbf u,\ldots,\mathbf u)\in\mathbb Z_q^{\ell nk}$.
+Consequently, the value
+$\mathsf{rb}:=
+\mathsf{ExplainSL}
+(1^\kappa,\mathbf A,\widehat{\mathbf A},
+\mathbf T_{\mathbf A},\mathbf h,\mathbf v,\sigma_1)$
+has the same distribution as in the real $H_{\mathsf{sp}}$ simulation, up to
+negligible statistical distance.
+
+Finally, the simulated partial-preimage oracle samples a uniformly random
+target and generates partial preimages using $\mathsf{PSampPre}$ exactly as
+in the corresponding hybrid. Hence, the oracle responses in \textbf{Hybrid 5}
+are statistically indistinguishable from those in \textbf{Hybrid 4}. Since
+$\mathcal A$ makes only polynomially many random-oracle and pre-decryption
+queries, a union bound over all such queries preserves negligible statistical
+distance. Therefore, \textbf{Hybrid 4} $\approx_s$ \textbf{Hybrid 5}.
+\end{proof}
+
+\noindent\begin{lemma}
+    Suppose the parameter follows the table~\ref{tab:parameters} and the lattice trapdoor scheme $\mathsf{PT}$ has $(nk,2mk,\chi_0,\chi_1, \sigma_2)$-indistinguishability, the \textbf{Hybrid 5} and \textbf{Hybrid 6} are computationally close
+\end{lemma}
+\begin{proof}
+    If $c_1$ from $\mathsf{PT}$ challenger equals $\mathbf{u^\top s} + e_1$, the $\mathcal{B}^\mathcal{A}$ perfectly simulates $c_1$ in \textbf{Hybrid 5}. Else, $c_1$ is uniformly random, thereby $\mathcal{B}^\mathcal{A}$ perfectly simulates $c_1$ in \textbf{Hybrid 6}. Therefore, the success probability of $\mathcal{B}^\mathcal{A}$ is the same as $\mathcal{A}$, which yields the desirable result.
+\end{proof}
