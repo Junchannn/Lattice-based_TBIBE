@@ -1,5 +1,5 @@
-#include "btibe/bench.hpp"
-#include "btibe/tests.hpp"
+#include "tbibe/bench.hpp"
+#include "tbibe/tests.hpp"
 
 #include <cstring>
 #include <iostream>
