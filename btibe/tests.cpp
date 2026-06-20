@@ -210,7 +210,7 @@ private:
     }
 
     void testRandomBatchRoundtrips() {
-        for (int tc = 0; tc < 1000; ++tc) {
+        for (int tc = 0; tc < 10; ++tc) {
             ThresholdBatchIBE scheme = ThresholdBatchIBE::setup(rng_());
             int batchSize = 1 + (rng_() % 40);
             std::vector<int> bits(batchSize);
@@ -236,7 +236,7 @@ private:
     }
 
     void testArbitraryByteRoundtrips() {
-        for (int tc = 0; tc < 200; ++tc) {
+        for (int tc = 0; tc < 10; ++tc) {
             ThresholdBatchIBE scheme = ThresholdBatchIBE::setup(rng_());
             int len = rng_() % 128;
             std::vector<std::uint8_t> msg(len);

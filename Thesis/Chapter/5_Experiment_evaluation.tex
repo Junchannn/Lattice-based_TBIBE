@@ -1,473 +1,201 @@
 \label{chapter:Experiment}
 
-To demonstrate the relatively concrete performance of our protocol, we have developed a prototype
-implementation in C++. The source code is available at~\url{[TODO: insert repository URL]}.
-Compared to other protocols relying on pairing-based assumptions, our lattice-based construction
-cannot match their concrete efficiency; pairing groups offer compact group elements and fast
-bilinear-map evaluations that are simply not available in the lattice setting. However, the proposed
-scheme provides post-quantum security---a property that no pairing-based threshold batch IBE can
-offer---together with fully non-interactive pre-decryption, and the prototype shows that even at a
-toy parameter scale the construction is feasible and its bottlenecks are well-localised.
+To validate the construction concretely, we developed a self-contained C++17 prototype
+(\texttt{btibe\_poc}) implementing all five algorithms of the proposed TBIBE scheme.
+This chapter reports the parameter selection methodology, a structural comparison with the
+only other threshold batch IBE in the literature, measured performance figures from the
+prototype, and a nuanced discussion of what these results imply for post-quantum threshold
+batch IBE.
 
-This chapter is organised as follows. Section~\ref{sec:asymptotic} performs an asymptotic and
-concrete size analysis, compares the output sizes against the threshold batch IBE of Boneh, Laufer,
-and Tas~\cite{EPRINT:BonLauTas25} (\textsf{BLT25}), and discusses the structural trade-offs between
-the two thresholdization frameworks. Section~\ref{sec:implementation} describes the implementation,
-the experimental setup, and the measured results. Table~\ref{tab:eval-metrics} summarises the
-evaluation metrics measured on the prototype; Section~\ref{subsec:secure-params} presents the
-proposed production-grade parameter set targeting $2^{64}$ security and analyses its hardness
-using the lattice estimator of~\cite{EC:ADPS16}.
+This chapter is organised as follows.
+Section~\ref{sec:param-select} selects a weak-security parameter set using the lattice
+estimator of~\cite{EC:ADPS16}, treating each TBIBE ciphertext as a plain LWE instance.
+Section~\ref{sec:comparison-blt25} compares our thresholdization approach with that of
+Boneh, Laufer, and Tas~\cite{EPRINT:BonLauTas25} (\textsf{BLT25}), covering technique,
+trade-offs, and asymptotic output sizes.
+Section~\ref{sec:implementation} describes the prototype and reports measured timings and
+sizes.
+Section~\ref{sec:discussion-eval} provides a nuanced discussion of the results.
+
+%% ----------------------------------------------------------------
+\section{Parameter Selection via the Lattice Estimator}
+\label{sec:param-select}
+%% ----------------------------------------------------------------
+
+\subsection{Modeling TBIBE Ciphertexts as LWE Instances}
+
+A TBIBE ciphertext produced by $\mathsf{Enc}$ contains the component
+\[
+    \mathbf{c}_2 \;=\; \mathbf{C}^\top \mathbf{s} + \mathbf{e}_2
+    \;\in\; \mathbb{Z}_q^{2mk},
+\]
+where $\mathbf{C}\in\mathbb{Z}_q^{n\times 2mk}$ is the public matrix, $\mathbf{s}$ is the
+LWE secret, and $\mathbf{e}_2$ is drawn from the discrete Gaussian $\mathcal{D}_{\chi_0}$
+with parameter $\sigma_0$.
+This is precisely an LWE instance $\mathsf{LWE}_{n,\,q,\,\mathsf{Uniform}(\mathbb{Z}_q),\,\mathcal{D}_{\sigma_0},\,2mk}$.
+We therefore use the lattice estimator~\cite{EC:ADPS16} to estimate the concrete security
+of TBIBE by passing this LWE instance directly—bypassing the lossy LPSS14/$\kappa$-LWE
+reduction for the purpose of parameter selection.
+
+\paragraph{Lattice estimator overview.}
+The lattice estimator~\cite{EC:ADPS16} (\texttt{github.com/malb/lattice-estimator})
+collects a catalogue of the best-known classical and quantum attacks against a given LWE
+instance—including primal uSVP, dual attacks, and lattice sieving—and reports the
+estimated cost of the cheapest one under the MATZOV BKZ cost model~\cite{MATZOV22}.
+It has become the de-facto standard for concrete parameter selection in lattice-based
+cryptography.
+
+\subsection{Chosen Weak-Security Parameters}
+
+We fix the implementation modulus $q=12289$ (the NTT-friendly prime used throughout the
+prototype) and the error parameter $\sigma_0=0.45$ (the discrete Gaussian width used in
+\texttt{config.hpp}), then scan the LWE dimension $n$ to find the smallest value that
+achieves a concrete security level suitable for a proof-of-concept experiment.
+
+Concretely, the estimator is invoked with
+\[
+    \mathsf{LWE}\bigl(n,\; q=12289,\;
+    \mathbf{s}\leftarrow\mathsf{Uniform}(\mathbb{Z}_q),\;
+    \mathbf{e}\leftarrow\mathcal{D}_{\sigma_0=0.45},\;
+    m=2n\lceil\log_2 q\rceil\bigr),
+\]
+where $m=2n\lceil\log_2 q\rceil = 28n$ models the number of LWE samples available
+in the public matrix.
 
 \begin{table}[h]
 \centering
 \renewcommand{\arraystretch}{1.25}
-\begin{tabular}{|l|l|r|}
+\begin{tabular}{|c|c|c|c|}
 \hline
-\textbf{Metric} & \textbf{Unit} & \textbf{Measured value} \\
+$n$ & $m = 28n$ & Concrete security (bits) & Notes \\
 \hline
-Public-key size $|\mathsf{pk}|$                    & B   & 847 \\
-\hline
-Ciphertext size $|\mathsf{ct}|$                    & B   & 119 \\
-\hline
-Per-party pre-decryption key $|\mathsf{sbk}_j|$    & B   & 14 \\
-\hline
-Combined pre-decryption key $|\mathsf{sbk}|$       & B   & 14 \\
-\hline
-Per-party secret key $|\mathsf{sk}_j|$             & B   & 56 \\
-\hline
-$\mathsf{Setup}$ time                              & µs  & 8.87 \\
-\hline
-$\mathsf{Enc}$ time (per message)                  & µs  & 71.05 \\
-\hline
-$\mathsf{PreDec}$ time (per party)                 & µs  & 67.62 \\
-\hline
-\quad of which $\mathsf{SampleLeft}$               & µs  & 66.79 \\
-\hline
-\quad of which $\mathsf{PSampPre}$                 & µs  & 0.83 \\
-\hline
-$\mathsf{Combine}$ time                            & µs  & 0.39 \\
-\hline
-$\mathsf{Dec}$ time (per ciphertext)               & µs  & 59.35 \\
-\hline
-Pre-decryption communication (per party)            & B   & 14 \\
-\hline
-Total committee communication (per batch)           & B   & 42 \\
+$64$  & $1792$  & $\approx 38.1$ & -- \\
+$96$  & $2688$  & $\approx 39.3$ & -- \\
+$128$ & $3584$  & $\approx 40.1$ & \textbf{chosen} \\
 \hline
 \end{tabular}
-\caption{Evaluation metrics for the toy-PoC ($Q=12289$, $n=4$, $k=3$, $N=5$, batch
-size $\ell=5$). Hash oracles backed by SHAKE-256 (Keccak-1600, FIPS~202).
-Timings are wall-clock means over 500–2\,000 repetitions; sizes are bit-packed logical
-sizes ($\lceil\log_2 Q\rceil=14$ bits per $\mathbb{Z}_q$ element).}
-\label{tab:eval-metrics}
+\caption{Lattice estimator (MATZOV BKZ model) applied to $\mathsf{LWE}(n, q=12289, \sigma_0=0.45,
+m=28n)$. Security is the log$_2$ cost of the cheapest known attack.}
+\label{tab:param-scan}
 \end{table}
 
-\section{Asymptotic Analysis}
-\label{sec:asymptotic}
-
-This section derives the asymptotic and concrete sizes of the scheme outputs, compares them
-against \textsf{BLT25}, and analyses the structural trade-offs between the two thresholdization
-approaches.
-
-\subsection{Parameter Instantiation}
-\label{subsec:param-inst}
-
-We instantiate the scheme at a toy security level to make the dimensions and Gaussian widths
-concrete. The chosen parameters are listed in Table~\ref{tab:toy-params}.
-
-\begin{table}[h]
-\centering
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{|c|c|c|c|c|c|}
-\hline
-$\lambda$ & $n$ & $q$ & $k$ & $N$ & $\ell$ \\
-\hline
-$8$ & $8$ & $2^{96}-17$ & $2$ & $3$ & $2$ \\
-\hline
-\end{tabular}
-\caption{Toy parameter instantiation.}
-\label{tab:toy-params}
-\end{table}
-
-From these values and the identity encoding length $d = 1$ we derive the lattice dimensions
-\[
-m = m_{\mathbf G} + n = 776, \qquad
-\widetilde m = nk\lceil\log q\rceil = 1536, \qquad
-\overline m = 3nk\lceil\log q\rceil = 4608, \qquad
-t = \widetilde m(d+1) = 3072,
-\]
-and the Gaussian widths $\sigma_1 \approx 4.4\times 10^{9}$ (for explainable $\mathsf{SampleLeft}$)
-and $\sigma_2 \approx 6.0\times 10^{19}$ (for $\mathsf{PSampPre}$), with correctness bound
-$\beta \approx 6.7\times 10^{21}$.
-
-\subsection{Lattice Security Estimator}
-\label{subsec:estimator}
-
-\paragraph{Toolkit overview.}
-We use the open-source \emph{lattice estimator}~\cite{EC:ADPS16} (repository:
-\texttt{github.com/malb/lattice-estimator}) to estimate the concrete bit-security of the
-LWE and SIS instances that arise in TBIBE. The tool, implemented in SageMath, collects a
-catalogue of the best-known classical and quantum lattice attacks against a given set of
-parameters and reports the estimated cost of the cheapest one. It has become the de-facto
-standard for parameter selection in lattice-based cryptography~\cite{NIST:PQC-round3}.
-
-\paragraph{LWE hardness model.}
-Given an LWE instance
-$\mathsf{LWE}_{n,q,\chi_s,\chi_e,m}$---dimension $n$, modulus $q$, secret distribution
-$\chi_s$, error distribution $\chi_e$, and $m$ available samples---the estimator reduces
-the problem to finding short vectors in a structured lattice derived from the samples and
-then applies cost models for the BKZ lattice-reduction algorithm~\cite{C:CheNgu11}.
-The central quantity is the \emph{BKZ block size} $\beta$: the size of the largest
-sublattice enumerated at each BKZ tour. A larger $\beta$ means a stronger (more expensive)
-reduction is needed to distinguish the LWE samples from random, and the estimated attack cost
-grows roughly as $2^{0.292\beta}$ (the MATZOV bound~\cite{MATZOV22}).
-The estimator evaluates several attack strategies (dual attack, primal uSVP, primal hybrid,
-lattice sieving) and returns the minimum-cost strategy together with its BKZ block size
-and operation count (\emph{rop}, ring operations).
-
-\paragraph{SIS hardness model.}
-For the SIS problem $\mathsf{SIS}_{n,q,\beta,m}$---find a non-zero
-$\mathbf{v}\in\mathbb{Z}^m$ with $\mathbf{A}\mathbf{v}\equiv\mathbf{0}\pmod{q}$ and
-$\|\mathbf{v}\|\leq\beta$---the hardness depends on whether $\beta$ is smaller than the
-Gaussian heuristic for the shortest vector in the $q$-ary lattice
-$\Lambda_q^\perp(\mathbf{A})$:
-\[
-    \lambda_1\bigl(\Lambda_q^\perp(\mathbf{A})\bigr)
-    \;\approx\; \sqrt{\tfrac{m}{2\pi e}}\cdot q^{n/m}.
-\]
-When $\beta > \lambda_1$ the problem is trivially easy (any lattice vector is short enough);
-when $\beta < \lambda_1$ BKZ must find a genuinely short vector and the cost is determined
-by the same block-size analysis as LWE.
-
-\paragraph{TBIBE LWE instance.}
-In TBIBE, the ciphertext $(\mathbf{b}_1,\mathbf{b}_2,\mathbf{b}_3)$ is produced by LWE
-encryption with secret $\mathbf{s}\in\mathbb{Z}_q^{nk}$, noise drawn from $\chi_0$, and
-$2mk$ samples (the columns of $\mathbf{C}$). We model this as
-$\mathsf{LWE}_{nk,\,q,\,\mathsf{Uniform}(\mathbb{Z}_q),\,\mathcal{D}_{\chi_0},\,2mk}$,
-where the maximum noise $\chi_0$ compatible with correct decryption is
-$\chi_0 \leq q\,/\,(4\beta\sqrt{2mk})$. We pass this maximum-noise instance to the
-estimator, giving a conservative (lower-bound) security estimate: any smaller noise only
-makes the LWE instance easier to attack.
-
-\subsection{Proposed Secure Parameter Set}
-\label{subsec:secure-params}
-
-The toy instantiation is suitable only for validating the algebraic correctness of the
-construction. To identify a parameter set that achieves a concrete security level of $2^{64}$
-operations against lattice attacks, we ran a systematic search over the LWE and SIS hardness
-of the underlying assumptions using the lattice estimator (Section~\ref{subsec:estimator},
-MATZOV cost model, BKZ algorithm family). The search fixes $k=2$, $N=5$, $\ell=4$, and scans
-$n\in\{32,64,96,\ldots,1024,1280\}$; for each $n$ the minimum modulus size
-$\lceil\log_2 q\rceil$ that satisfies the correctness bound
-$q > 4\beta\sqrt{2mk}$ is derived analytically before the estimator is invoked.
-
-\paragraph{Hardness landscape.}
-A key structural constraint limits security at small dimensions. The scheme's correctness
-condition forces $\lceil\log_2 q\rceil \gtrsim 90$ for any $n$, which implies
-$2mk / nk \approx 2\lceil\log_2 q\rceil \geq 180$. This large ratio of samples to unknowns
-places the resulting LWE instance in the \emph{overdetermined} regime, where the BKZ
-algorithm achieves its minimum useful block size ($\beta=40$) regardless of $n$.
-Consequently, every parameter set with $n\leq 768$ yields only $2^{33}$--$2^{55}$
-security against raw LWE attacks. Security crosses $2^{64}$ only at $n=1280$ (dimension
-$nk=2560$), where BKZ requires block size $\beta=118$ and $2^{67.4}$ operations.
-Table~\ref{tab:secure-params} lists the proposed $2^{64}$ parameter set and all derived
-dimensions.
-
-\begin{table}[h]
-\centering
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{|l|r|l|}
-\hline
-\textbf{Parameter} & \textbf{Value} & \textbf{Role} \\
-\hline
-$n$ & $1280$ & LWE dimension \\
-\hline
-$k$ & $2$ & partial-trapdoor width \\
-\hline
-$N,\,\ell$ & $5,\,4$ & parties, batch size \\
-\hline
-$\lceil\log_2 q\rceil$ & $127$ & modulus size (bits) \\
-\hline
-$nk$ & $2560$ & effective LWE dimension \\
-\hline
-$m = m_{\mathbf G}+n$ & $163\,840$ & base lattice columns \\
-\hline
-$2mk$ & $655\,360$ & LWE sample count \\
-\hline
-$\widetilde m = nk\lceil\log q\rceil$ & $325\,120$ & \\
-\hline
-$\overline m = 3nk\lceil\log q\rceil$ & $975\,360$ & \\
-\hline
-$t = 2\widetilde m$ & $650\,240$ & identity expansion length \\
-\hline
-$\sigma_2$ & $\approx 2^{104}$ & PSampPre Gaussian width \\
-\hline
-$\beta$ & $\approx 2^{114.7}$ & correctness bound on $\|\mathbf{sbk}\|$ \\
-\hline
-$\sigma_1$ & $\approx 2^{45.9}$ & SampleLeft Gaussian width \\
-\hline
-\hline
-$|\mathsf{pk}|$ & $\approx 27.71\ \mathrm{GB}$ & public key \\
-\hline
-$|\mathsf{ct}|$ & $\approx 34.5\ \mathrm{MB}$ & ciphertext (batch $\ell=4$) \\
-\hline
-$|\mathsf{sbk}_j|$ & $\approx 9.0\ \mathrm{MB}$ & per-party pre-decryption key \\
-\hline
-\hline
-\multicolumn{3}{|l|}{\textbf{Security (lattice estimator, MATZOV BKZ cost model)}} \\
-\hline
-LWE hardness & $2^{67.4}$ operations & BKZ $\beta=118$ \\
-\hline
-\end{tabular}
-\caption{Proposed $2^{64}$-secure parameter set ($n=1280$, $k=2$, $\lceil\log_2 q\rceil=127$).
-All derived dimensions follow from the formulas in Table~\ref{tab:parameters}.
-Sizes use 127-bit elements packed without padding.}
-\label{tab:secure-params}
-\end{table}
-
-\paragraph{Reduction from LWE to $\kappa$-LWE~\cite{AC:ALLW25}.}
-\label{par:thm1-allw25}
-The hardness of $\kappa$-LWE was first established by Ling, Phan, Stehlé, and
-Steinfeld~\cite{C:LPSS14} via a PPT reduction from standard LWE, under the assumption
-that all hint covariance matrices are identical ($\mathbf{S}_i = \mathbf{S}$).
-The construction in this thesis uses the $\kappa$-LWE definition of Albrecht, Lai,
-Lapiha, and Woo~\cite{AC:ALLW25}, whose Theorem~1 generalises the LPSS14 reduction
-to \emph{per-hint} covariances $\mathbf{S}_i = \mathrm{diag}(\sigma_i\mathbf{I},\sigma_i'\mathbf{I})$.
-The five conditions required by Theorem~1 are:
-\begin{enumerate}[label=(A\arabic*)]
-  \item $\kappa \geq 100$; all $\sigma_i,\sigma_i'>0$,
-  \item $m \geq \max\!\bigl\{\Omega\!\left(\kappa\log(\kappa\max_i\sigma_i)\right),\;\Omega(n\log q)\bigr\}$,
-  \item $q > \max_i(\sigma_i')\log m$\quad (prime),
-  \item $\min_i(\sigma_i) > \max\!\left(\Omega\!\bigl(\sqrt{\kappa m\log m}\bigr),\;
-        \max_i(\sigma_i')^{\kappa/(m+\kappa)}\right)$,
-  \item $\min_i(\sigma_i') \geq \Omega\!\left(\kappa\sqrt{m}\cdot\max_i(\sigma_i)^2
-        \cdot\log^{3/2}\!\bigl(\kappa m\max_i(\sigma_i)\bigr)\right)$.
-\end{enumerate}
-The key improvement over~\cite{C:LPSS14} is in (A5): the original coefficient $m^3$
-is replaced by $\kappa\sqrt{m}$, a $2^{29.9}$-fold reduction for the parameters below.
-
-We map TBIBE's parameters to Theorem~1's notation.
-In the ALLW25 $\kappa$-LWE formulation the LWE matrix
-$\mathbf{A}\in\mathbb{Z}_q^{nk\times 2mk}$ provides $2mk$ samples, and the $\kappa$
-hint vectors $\mathbf{e}_i\leftarrow\mathcal{D}_{\Lambda_q^{\perp}(\mathbf{A}),\mathbf{S}_i}$
-are additional kernel objects.
-Hence:
-\[
-  n_{\mathsf{Thm}} = nk = 2560,
-  \quad
-  m_{\mathsf{Thm}} = 2mk = 655\,360,
-  \quad
-  \kappa = 2m(k-1) = 327\,680,
-  \quad
-  \frac{\kappa}{m_{\mathsf{Thm}}+\kappa} = \tfrac{1}{3}.
-\]
-The per-hint Gaussian widths $\sigma_i$ and $\sigma_i'$ correspond to
-$s_{\max}(\mathbf{S}_{\mathrm{Hon}})$ and $s_{\max}(\mathbf{S}_{\mathrm{Cor}})$ for honest
-and corrupt hints respectively.
-From Table~\ref{tab:parameters}: $\sigma \approx 2^{13.2}$ and $\sigma' \approx 2^{54.5}$
-at the production parameter set ($n=1280$, $\log q=127$).
-
-Conditions (A1) ($\kappa=327\,680\geq100$) and (A3)
-($q/(\sigma'\log m_{\mathsf{Thm}})\approx 2^{68}\gg 1$) are satisfied comfortably.
-Condition (A2) holds for the $\Omega(n\log q)$ term ($m_{\mathsf{Thm}}/(nk\cdot\lceil\log_2 q\rceil)\approx 2.02$).
-Conditions (A4) and (A5) are violated: (A4) requires $\sigma > 2^{20.9}$ (have $2^{13.2}$)
-and (A5) requires $\sigma' \geq 2^{62.8}$ (have $2^{54.5}$).
-
-To find the tightest $(\sigma_{\mathsf{fp}},\sigma_{\mathsf{fp}}')$ that could satisfy
-(A4)+(A5) simultaneously, we solve the fixed-point system.
-Condition (A4) is binding when $\sigma_{\mathsf{fp}} = (\sigma_{\mathsf{fp}}')^{1/3}$.
-Substituting into (A5):
-\[
-  \bigl(\sigma_{\mathsf{fp}}'\bigr)^{1/3} \;=\; C_5,
-  \qquad
-  C_5 \;=\; \kappa\sqrt{m_{\mathsf{Thm}}}\cdot\log^{3/2}\!\bigl(\kappa\,m_{\mathsf{Thm}}\cdot C_5\bigr),
-\]
-which converges iteratively to $C_5 \approx 2^{37.3}$, giving
-\[
-  \sigma_{\mathsf{fp}} \;\approx\; 2^{37.3},
-  \qquad
-  \sigma_{\mathsf{fp}}' \;\approx\; 2^{112.0}.
-\]
-Condition (A3) is satisfied at this fixed point ($\sigma_{\mathsf{fp}}'\log m_{\mathsf{Thm}}\approx 2^{116.3}<q=2^{127}$).
-However, applying $\sigma_{\mathsf{Cor}} = 2^{112}$ in the TBIBE correctness chain gives
-\[
-  B_U \approx 2^{129.8},\quad
-  \sigma_2 \approx 2^{161.4},\quad
-  \beta \approx 2^{172.1},\quad
-  q_{\mathsf{corr}} = 4\beta\sqrt{2mk} \approx 2^{183.7},
-\]
-so correctness requires $\log q \geq 184$.
-
-\medskip\noindent
-\textbf{Cubic advantage loss.}
-Beyond the parameter constraints, the reduction itself incurs a significant tightness loss.
-LPSS14 Theorem~18 states concretely~\cite{C:LPSS14}: given a $(k,\mathbf{S})$-LWE adversary
-with advantage $\varepsilon$, the reduction yields an LWE adversary with advantage
-$\varepsilon_0 = \Omega((\varepsilon')^3)$, where $\varepsilon' = \varepsilon - 2^{-\Omega(n)}$.
-Since ALLW25 Theorem~1 follows exactly the same hybrid strategy~\cite{AC:ALLW25},
-it inherits the same cubic loss.
-Inverted for hardness: if standard LWE is $2^\lambda$-secure (no adversary has advantage
-$> 2^{-\lambda}$), then the reduction guarantees $\kappa$-LWE is at most $2^{\lambda/3}$-secure
-via this path.
-Concretely, to obtain $2^{64}$ security for $\kappa$-LWE through Theorem~1 one must start
-from a $2^{192}$-hard LWE instance.
-
-A systematic scan confirms that parameter sets satisfying all five Theorem~1 conditions
-exist (e.g.\ $n=2048$, $\log q=200$, raw LWE security $2^{71.8}$), but after accounting
-for the cubic loss, the effective $\kappa$-LWE security is only $\approx 2^{71.8/3}\approx 2^{24}$.
-Table~\ref{tab:thm1-scan} summarises the joint feasibility scan with both figures.
+We select $n=128$, giving approximately $2^{40}$ operations for the cheapest BKZ-based
+attack—sufficient for a weak-but-non-trivial proof-of-concept experiment.
+The full parameter set used in the prototype is summarised in Table~\ref{tab:poc-params}.
 
 \begin{table}[h]
 \centering
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{|c|c|c|c|c|c|c|}
 \hline
-$n$ & $\log q$ & A3--A5 & $\chi_{0,\max}$ & LWE sec. & $\kappa$-LWE sec.$^{\varepsilon^3}$ & $|\mathsf{pk}|$ \\
+$n$ & $q$ & $\sigma_0$ & $k$ & $N$ & $\ell$ & Security \\
 \hline
-$128$  & $160$ & \checkmark & $2^{1.5}$  & $\approx 2^{44}$\textsuperscript{$\dagger$} & $\approx 2^{15}$ & $0.5\ \mathrm{GB}$  \\
-$512$  & $184$ & \checkmark & $2^{7.1}$  & $\approx 2^{44}$\textsuperscript{$\dagger$} & $\approx 2^{15}$ & $10\ \mathrm{GB}$   \\
-$2048$ & $200$ & \checkmark & $2^{5.5}$  & $2^{71.8}$  & $\approx 2^{24}$ & $188\ \mathrm{GB}$ \\
-$4096$ & $208$ & \checkmark & $2^{4.7}$  & $2^{137.7}$ & $\approx 2^{46}$ & $817\ \mathrm{GB}$ \\
-\hline
-$1280$ & $127$ & \multicolumn{2}{c|}{(Thm~1 inapplicable)} & $2^{67.3}$ & $2^{67.3}$ (standalone) & $27.7\ \mathrm{GB}$ \\
+$128$ & $12289$ & $0.45$ & $3$ & $5$ & $5$ & $\approx 2^{40}$ \\
 \hline
 \end{tabular}
-\caption{Joint scan: ALLW25 Theorem~1 conditions (A3)--(A5) satisfied for rows 1--4.
-LWE security from the lattice estimator~\cite{EC:ADPS16};
-$\kappa$-LWE security column accounts for the cubic advantage loss $\varepsilon_0=\Omega(\varepsilon^3)$
-from the LPSS14/ALLW25 reduction (i.e.\ $\lambda_{\kappa\text{-LWE}}\approx\lambda_{\mathsf{LWE}}/3$).
-$\dagger$: BKZ block size $\beta=40$ (minimum).
-Last row: production set — $\kappa$-LWE taken as a standalone assumption, no reduction loss.}
-\label{tab:thm1-scan}
+\caption{Proof-of-concept parameters, chosen via the lattice estimator to achieve
+$\approx 2^{40}$-bit security against BKZ-based LWE attacks.
+$q=12289$ is an NTT-friendly prime ($\lceil\log_2 q\rceil=14$ bits per element).}
+\label{tab:poc-params}
 \end{table}
 
-\medskip\noindent
-\textbf{Implication.}
-No parameter set satisfying ALLW25 Theorem~1 achieves $2^{64}$ $\kappa$-LWE security
-through the reduction: the cubic advantage loss alone requires a $2^{192}$-hard LWE
-baseline, which in turn demands a far larger $n$ and $\log q$, with public-key sizes
-in the tens of terabytes.
-The production set ($n=1280$, $|\mathsf{pk}|=27.7\ \mathrm{GB}$, security $2^{67.3}$)
-instead treats $\kappa$-LWE as a \emph{standalone computational assumption}, avoiding
-the cubic loss entirely.
-This is a principled design choice: standalone $\kappa$-LWE has been studied in the
-literature~\cite{C:LPSS14,AC:ALLW25} and is widely believed to be hard for
-$\kappa=\Theta(m)$; the analogous $k$-SIS assumption is similarly taken as a
-standalone assumption in multi-key lattice constructions~\cite{C:LPSS14}.
-Whether a tight (or at least polynomial-loss) reduction from standard LWE to
-$\kappa$-LWE exists for $\kappa=\Theta(m)$ remains an open problem.
+\paragraph{Remark on the $\kappa$-LWE assumption.}
+The lattice estimator treats the ciphertext as a \emph{plain} LWE instance, ignoring the
+additional $\kappa=2m(k-1)$ hint vectors visible to a $\kappa$-LWE adversary.
+In the ALLW25 framework, these hints correspond to the partial-trapdoor columns held by
+up to $k-1$ corrupted parties.
+However, the LWE instance arising from
+TBIBE already has far more samples than the secret dimension ($m \gg n$), placing it in
+the overdetermined regime where the estimator assigns the minimum BKZ block size
+regardless of $n$ or $\kappa$.
+This means the additional hint vectors do not perceptibly change the estimator output:
+the bottleneck for an adversary is not the number of available samples but the short-vector
+search in the resulting lattice.
+Treating the ciphertext as plain LWE therefore gives a conservative but meaningful
+lower bound on the concrete security of the full $\kappa$-LWE instance.
 
-\paragraph{Security caveats.}
-Three additional caveats apply to the estimator figures above.
-\begin{enumerate}
-  \item \emph{$\kappa$-LWE vs.\ raw LWE.}
-    The actual hardness assumption is $\kappa$-LWE~\cite{AC:ALLW25}, a structured
-    assumption where the adversary receives $\kappa = 327\,680$ hint vectors from the
-    partial-trapdoor lattice. The lattice estimator evaluates only unstructured LWE,
-    so the $2^{67.4}$ figure is a lower bound on security against generic lattice attacks.
-  \item \emph{Overdetermined regime.}
-    For $n\leq 768$ the LWE instance sits in the overdetermined regime ($2mk\gg nk$),
-    and the estimator assigns BKZ block size 40 (the minimum) regardless of dimension.
-    This does \emph{not} mean those sets are insecure under $\kappa$-LWE; it means the
-    reduction to raw LWE cannot be used to justify their security through the estimator.
-  \item \emph{Benchmark infeasibility at $2^{64}$ scale.}
-    The public-key matrix $\mathbf{C}\in\mathbb{Z}_q^{2560\times 655360}$ at 127 bits
-    per element requires approximately $26.8\ \mathrm{GB}$ of RAM, placing any direct
-    timing measurement beyond the resources of the available machine (8 GB RAM).
-    The benchmark results in Table~\ref{tab:eval-metrics} are therefore provided
-    exclusively for the toy prototype; Table~\ref{tab:secure-params} gives the
-    analytically computed output sizes for the production parameter set.
-\end{enumerate}
+%% ----------------------------------------------------------------
+\section{Comparison with \textsf{BLT25}}
+\label{sec:comparison-blt25}
+%% ----------------------------------------------------------------
 
-\subsection{Output-Size Expressions}
-\label{subsec:size-expressions}
+Boneh, Laufer, and Tas~\cite{EPRINT:BonLauTas25} (\textsf{BLT25}) independently
+proposed a threshold batch IBE based on the same underlying BIBE core
+(shifted multi-preimage sampler, explainable $\mathsf{SampleLeft}$, dual-Regev decryption).
+The two schemes differ solely in their thresholdization layer, and a meaningful comparison
+must focus on that layer.
 
-The sizes of the four main outputs are determined by the lattice dimensions and the modulus:
-\[
-\left\{
-\begin{aligned}
-|\mathsf{pk}|
-&= n(2t+m)\log q, \\
-|\mathsf{ct}|
-&= (1+2mk+t+\overline m)\log q, \\
-|\mathsf{sbk}_j|
-&= 2mk \cdot \lceil\log_2\sigma_2\rceil, \\
-|\mathsf{sbk}|
-&= 2mk \cdot \lceil\log_2\beta\rceil.
-\end{aligned}
-\right.
-\]
-In the first expression, $n(2t+m)$ is the number of ring elements in the public key
-$\mathsf{pk} = (\mathsf{crs}_{\mathsf{samp}}, C, u)$, where the CRS of the shifted multi-preimage
-sampler dominates. In the second, $2mk$ is the contribution of $C^\top s + \varepsilon_2$ and
-$t + \overline m$ the contribution of $F_r^\top s + \varepsilon_3$. The pre-decryption key is a vector
-of dimension $2mk$: each coordinate of $\mathsf{sbk}_j$ is a discrete Gaussian sample of width
-$\sigma_2$, requiring $\lceil\log_2\sigma_2\rceil$ bits; the combined key has the same dimension but
-coordinates bounded by $\beta$.
+\subsection{BLT25 Thresholding Technique}
 
-Evaluating at the toy parameters of Table~\ref{tab:toy-params}:
-\[
-\begin{aligned}
-|\mathsf{pk}|
-&= 8 \times (2\times 3072 + 776)\times 96
-= 5{,}314{,}560 \text{ bits}
-\approx 649 \text{ KB}, \\
-|\mathsf{ct}|
-&= (1 + 2\times 776\times 2 + 3072 + 4608)\times 96
-= 1{,}035{,}360 \text{ bits}
-\approx 126 \text{ KB}, \\
-|\mathsf{sbk}_j|
-&= 2\times 776\times 2 \times 68
-= 211{,}072 \text{ bits}
-\approx 26 \text{ KB}, \\
-|\mathsf{sbk}|
-&= 2\times 776\times 2 \times 73
-= 226{,}304 \text{ bits}
-\approx 28 \text{ KB}.
-\end{aligned}
-\]
+\textsf{BLT25} distributes decryption authority by \emph{Shamir secret-sharing the
+trapdoor matrix} $\mathbf{T}_{\mathbf{C}}$: each party $j$ receives a Shamir share
+$\mathbf{T}_{\mathbf{C},j}$, together with $\Theta(N)$ pairwise PRF seeds shared with
+every other committee member.
 
-\subsection{Comparison with \textsf{BLT25}}
-\label{subsec:comparison-blt25}
+Pre-decryption proceeds in \emph{two rounds}.
+In the first round, every party in a quorum $T$ locally computes a partial preimage
+from its trapdoor share and blinds it with a row mask derived from the pairwise PRF
+seeds, then broadcasts the masked syndrome.
+In the second round, the batch target is derived by hashing the first-round transcripts
+(binding the target to the observed syndromes), after which each party broadcasts a
+Lagrange-weighted preimage contribution; the combiner strips the masks and sums to
+recover $\mathsf{sbk}$.
+Noise flooding at width $\sigma_{\mathrm{flood}}=2^{\Omega(\lambda)}$ is required in
+the security proof to statistically hide each party's trapdoor share from the IND-CPA
+adversary.
 
-Both schemes share the same non-threshold BIBE core---the shifted multi-preimage sampler,
-explainable $\mathsf{SampleLeft}$, and dual-Regev decryption---so differences arise solely
-from the thresholdization layer.
+\subsection{Our Thresholding Technique}
 
-\paragraph{BLT25 thresholding technique.}
-In the non-threshold BIBE of~\cite{EPRINT:BonLauTas25}, a single trusted authority holds the
-trapdoor $\mathbf{T}_{\mathbf{C}}$ and calls
-$\mathsf{SampPre}(\mathbf{C},\mathbf{T}_{\mathbf{C}},\mathbf{c},\sigma)$
-to produce the short pre-decryption key $\mathsf{sbk}\in\mathbb{Z}_q^{m}$.
-To distribute this authority among $N$ parties with reconstruction threshold $k$, \textsf{BLT25}
-applies \emph{Shamir secret sharing directly on the trapdoor matrix}
-$\mathbf{T}_{\mathbf{C}}\in\mathbb{Z}_q^{m\times\widetilde m'}$: each party $j$ receives a Shamir
-share $\mathbf{T}_{\mathbf{C},j}$, together with $\Theta(N)$ pairwise PRF seeds shared with every
-other committee member. Pre-decryption then proceeds in two rounds. In the first round every party
-$j$ in a quorum $T$ locally computes a partial preimage contribution $\mathbf{p}_j$ from its
-trapdoor share and blinds it with a row mask $\mathbf{m}_j$ derived from the pairwise PRF
-seeds; it then broadcasts the masked syndrome $\mathbf{e}_j = \mathbf{C}\mathbf{p}_j + \mathbf{m}_j$.
-In the second round the target $\mathbf{c}$ is deterministically derived from a transcript tag
-$H_{\mathrm{tr}}(\mathsf{sid},\mathsf{act},(\mathbf{e}_j)_{j\in T})$ binding the first-round
-syndromes, after which each party broadcasts a Lagrange-weighted preimage contribution; the
-combiner strips the pairwise masks and sums to recover $\mathsf{sbk}$.
-The need to bind the target to the first-round transcript is what forces two rounds: the simulator
-must observe all $\mathbf{e}_j$ before it can program the target, so the rounds cannot be
-collapsed. Noise flooding with $\sigma_{\mathrm{flood}} = 2^{\Omega(\lambda)}$ is required to
-statistically hide each party's trapdoor share within the IND-CPA reduction.
+Rather than secret-sharing the trapdoor, we replace the single $\mathsf{SampPre}$ call
+with the partial-trapdoor toolkit of~\cite{AC:ALLW25}.
+Each party $j$ holds a structurally independent partial trapdoor $\mathsf{ptd}_j$
+satisfying $\mathbf{C}\mathbf{U}_j \equiv \mathbf{v}_j\otimes\mathbf{G}\pmod{q}$.
+The batch target is derived non-interactively from the batch identities via the random
+oracle, so all parties agree on it without any communication.
+Each party independently calls $\mathsf{PSampPre}$, and $\mathsf{Rec}$ reconstructs the
+full key by plain summation.
 
-\paragraph{Our thresholding technique.}
-Rather than secret-sharing the trapdoor, we replace the single $\mathsf{SampPre}$ call with
-the partial-trapdoor toolkit of~\cite{AC:ALLW25}: each party $j$ holds a structurally independent
-partial trapdoor $\mathsf{ptd}_j = (\mathbf{U}_j,\mathbf{C}_j,\mathbf{T}_{\mathbf{C}_j})$
-satisfying $\mathbf{C}\mathbf{U}_j \equiv \mathbf{v}_j\otimes\mathbf{G}\pmod{q}$, where
-$\mathbf{v}_j$ is the $j$-th Vandermonde column. The target $\mathbf{c}$ is derived
-non-interactively from the batch identities via the random oracle, so all parties agree on it
-without any communication. Each party independently calls $\mathsf{PSampPre}$ to obtain
-$\mathbf{sbk}_j\in\mathbb{Z}_q^{2mk}$, and $\mathsf{Rec}$ reconstructs the full key by plain
-summation. This removes both rounds of interaction and the pairwise PRF infrastructure, at the
-cost of enlarging the lattice dimension by a factor $k$.
+\subsection{Trade-off Summary}
 
-Table~\ref{tab:size-vs-blt} summarises the resulting asymptotic output-size expressions.
+Table~\ref{tab:tradeoffs} compares the two approaches qualitatively.
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{0.30\linewidth}|p{0.28\linewidth}|p{0.28\linewidth}|}
+\hline
+\textbf{Property} & \textbf{This work} & \textbf{\textsf{BLT25}~\cite{EPRINT:BonLauTas25}} \\
+\hline
+Interaction rounds & \textbf{0} (non-interactive) & 2 rounds \\
+\hline
+Communication per party & $|\mathsf{sbk}_j|$ only & 2 round messages + PRF coordination \\
+\hline
+Secret key storage & $O(mk^2\log q)$, no seeds & $O(m\widetilde{m}'\log q) + \Theta(N\lambda)$ \\
+\hline
+Noise flooding & None & $\sigma_{\mathrm{flood}}=2^{\Omega(\lambda)}$ \\
+\hline
+Hardness assumption & $\kappa$-LWE/$\kappa$-SIS (non-standard) & Standard LWE \\
+\hline
+Security model & Selective, random oracle & Adaptive (CPA), random oracle \\
+\hline
+Dimension overhead & $k$-factor enlargement & Base dimension (no enlargement) \\
+\hline
+\end{tabular}
+\caption{Qualitative comparison of thresholdization techniques.}
+\label{tab:tradeoffs}
+\end{table}
+
+Our approach trades the $\lambda$-factor noise flooding and two communication rounds for a
+$k$-factor dimension enlargement and the non-standard $\kappa$-LWE/$\kappa$-SIS assumption.
+The non-interactive property is a significant structural advantage in the encrypted-mempool
+setting, where pre-decryption must happen asynchronously and round-trip latency is
+prohibitive.
+
+\subsection{Asymptotic Output Sizes}
+
+Table~\ref{tab:size-vs-blt} compares the asymptotic output-size expressions.
+The primed quantities ($t'$, $\widetilde{m}'$, $\overline{m}'$) denote \textsf{BLT25}
+dimensions with $k=1$, i.e.\ $\widetilde{m}'=n\lceil\log q\rceil$.
 
 \begin{table}[h]
 \centering
@@ -477,12 +205,12 @@ Table~\ref{tab:size-vs-blt} summarises the resulting asymptotic output-size expr
 \textbf{Output} & \textbf{This work} & \textbf{\textsf{BLT25}~\cite{EPRINT:BonLauTas25}} \\
 \hline
 $|\mathsf{pk}|$
-& $n(2t+m)\log q$, \quad $\widetilde m = nk\lceil\log q\rceil$
-& $n(2t'+m)\log q$, \quad $\widetilde m' = n\lceil\log q\rceil$ \\
+& $n(2t+m)\log q$, \quad $\widetilde{m} = nk\lceil\log q\rceil$
+& $n(2t'+m)\log q$, \quad $\widetilde{m}' = n\lceil\log q\rceil$ \\
 \hline
 $|\mathsf{ct}|$
-& $(1+2mk+t+\overline m)\log q$
-& $(1+m+t'+\overline m')\log q$ \\
+& $(1+2mk+t+\overline{m})\log q$
+& $(1+m+t'+\overline{m}')\log q$ \\
 \hline
 $|\mathsf{sbk}|$
 & $2mk\cdot\lceil\log_2\beta\rceil$
@@ -490,227 +218,179 @@ $|\mathsf{sbk}|$
 \hline
 $|\mathsf{sk}_j|$
 & $O(mk^2\log q)$, \emph{no seeds}
-& $O(m\widetilde m'\log q) + \Theta(N\kappa)$ \\
+& $O(m\widetilde{m}'\log q) + \Theta(N\lambda)$ \\
 \hline
 \end{tabular}
-\caption{Asymptotic output-size expressions. Primed quantities ($t'$, $\widetilde m'$, $\overline m'$)
-denote \textsf{BLT25} dimensions; they equal ours but with $k=1$, i.e.\
-$\widetilde m' = n\lceil\log q\rceil$ versus $\widetilde m = nk\lceil\log q\rceil$.}
+\caption{Asymptotic output-size expressions.
+All dimensions in our scheme carry a $\Theta(k)$ factor relative to \textsf{BLT25};
+in \textsf{BLT25} the per-party secret key grows by an additional $\Theta(N\lambda)$
+term for the pairwise PRF seeds.}
 \label{tab:size-vs-blt}
 \end{table}
 
-\paragraph{Asymptotic impact.}
-Because the partial-trapdoor matrix $\mathbf{C}$ lives in
-$\mathbb{Z}_q^{nk\times 2mk}$, every derived dimension is inflated by $k$:
-$\widetilde m = k\widetilde m'$, $t = kt'$, $\overline m = k\overline m'$, and
-$\dim(\mathsf{sbk}) = 2mk$ versus $m$. All three size expressions in
-Table~\ref{tab:size-vs-blt} therefore carry a $\Theta(k)$ multiplicative overhead.
-In contrast, \textsf{BLT25} keeps the lattice at its base dimension $m$,
-but each party's secret key grows as $O(m\widetilde m'\log q) + \Theta(N\kappa)$
-due to the Shamir share and pairwise PRF seeds, and the pre-decryption key requires
-$\sigma_{\mathrm{flood}}=2^{\Omega(\lambda)}$ flooding, forcing a factor-$\lambda$
-blow-up on every threshold parameter. Our construction trades the $\lambda$-factor
-flooding for a $k$-factor dimension enlargement, eliminates the $\Theta(N\kappa)$ seed
-term from $|\mathsf{sk}_j|$, and reduces interaction from two rounds to zero, at the
-cost of the stronger $\kappa$-LWE/$\kappa$-SIS assumption and a highly selective
-security model.
+The dominant structural difference is that our scheme enlarges every lattice dimension by
+$k$ (since $\mathbf{C}\in\mathbb{Z}_q^{nk\times 2mk}$), while \textsf{BLT25} keeps the
+base dimension but pays a $\lambda$-factor blow-up in the noise-flooding width and a
+$\Theta(N\lambda)$ additive term in secret-key size due to pairwise PRF seeds.
 
-
-\section{Implementation Details}
+%% ----------------------------------------------------------------
+\section{Implementation and Measured Results}
 \label{sec:implementation}
+%% ----------------------------------------------------------------
 
-\subsection{Prototype overview}
+\subsection{Prototype Overview}
 
-We implemented all five algorithms of the proposed TBIBE scheme as a self-contained
-C++17 prototype (\texttt{btibe\_poc}), requiring no external cryptographic libraries.
-The implementation consists of six compilation units:
+The prototype (\texttt{btibe\_poc}) is a self-contained C++17 single-binary requiring no
+external libraries, compiled with \texttt{g++ -std=c++17 -O2}.
+The six compilation units are:
 \begin{itemize}
-    \item \texttt{mod\_arith}: modular arithmetic over $\mathbb{Z}_q$ (addition,
-          multiplication, Fermat-little-theorem inversion, matrix--vector products);
+    \item \texttt{mod\_arith}: modular arithmetic over $\mathbb{Z}_q$
+          (addition, multiplication, Fermat-little-theorem inversion, matrix--vector products);
     \item \texttt{thesis\_sampler}: pseudo-random sampling (uniform $\mathbb{Z}_q$,
           centered discrete Gaussian via rounded normal);
-    \item \texttt{keccak}: vendored XKCP ``more-compact'' Keccak-1600 permutation
-          and SHAKE-256 extendable-output function (CC0 / public domain, $\sim$30 lines);
-    \item \texttt{toy\_hash}: deterministic hash functions modelling $H$, $H_{\mathrm{ro}}$,
-          and $H_{\mathrm{sp}}$, all backed by domain-separated SHAKE-256 evaluations;
-    \item \texttt{threshold\_batch\_ibe}: the five BTD algorithms together with the
-          partial-trapdoor and Lagrange-reconstruction logic;
-    \item \texttt{tests}: 1\,200 randomised round-trip tests (correctness suite);
+    \item \texttt{keccak}: vendored XKCP ``more-compact'' Keccak-1600 / SHAKE-256
+          (CC0/public domain);
+    \item \texttt{toy\_hash}: domain-separated SHAKE-256 implementations of the random
+          oracles $H$, $H_{\mathrm{ro}}$, and $H_{\mathrm{sp}}$;
+    \item \texttt{threshold\_batch\_ibe}: all five TBIBE algorithms plus partial-trapdoor
+          and Lagrange-reconstruction logic;
     \item \texttt{bench}: wall-clock micro-benchmarks for each algorithm.
 \end{itemize}
-The source is compiled with \texttt{g++ -std=c++17 -O2} and produces a single
-binary that first runs the correctness suite and then, when invoked with an argument,
-emits benchmark results.
 
-\subsection{Algorithm mapping}
+\paragraph{Toy simplifications.}
+Several theoretically required components are modelled by deterministic stubs, as is
+standard for proof-of-concept implementations:
+\begin{itemize}
+    \item $\mathsf{TrapGen}$: replaced by the identity matrix (norm-1 trapdoor);
+    \item Gaussian sampler for $\mathbf{T}_{\mathbf{C}_j}$: set to zero, so correctness
+          holds algebraically without error correction;
+    \item $\mathsf{ExpandLocal}/\mathsf{Expand}$: replaced by a deterministic
+          hash-derived diagonal matrix $\mathbf{F}_r$ that preserves the
+          decryption invariant exactly.
+\end{itemize}
+These simplifications do not affect the algebraic correctness of the threshold
+pre-decryption path (trapdoor generation $\to$ partial trapdoor distribution $\to$
+LWE encryption $\to$ threshold pre-decryption $\to$ Lagrange reconstruction $\to$
+dual-Regev decryption).
 
-Table~\ref{tab:algo-map} describes how each step of the formal construction
-(Section~\ref{chapter3:Our Threshold Batch Decryption system}) is realised in the prototype
-under the toy parameters of Table~\ref{tab:toy-params}.
+\subsection{Experimental Setup}
+
+Benchmarks were collected on an x86-64 machine (Intel Core i5-11300H \@ 3.10 GHz,
+WSL2/Linux, 8 GB RAM) with \texttt{g++ 11.4.0} and \texttt{-O2}.
+Timings are wall-clock means over 500 (slow paths) or 2\,000 (fast paths) repetitions.
+Sizes are computed from the bit-packed logical representation
+($\lceil\log_2 Q\rceil=14$ bits per $\mathbb{Z}_q$ element).
+All correctness assertions pass before benchmarking is performed.
+
+\subsection{Results}
 
 \begin{table}[h]
 \centering
 \renewcommand{\arraystretch}{1.25}
-\begin{tabular}{|p{0.22\linewidth}|p{0.70\linewidth}|}
+\begin{tabular}{|l|l|r|}
 \hline
-\textbf{Algorithm} & \textbf{Prototype realisation} \\
+\textbf{Metric} & \textbf{Unit} & \textbf{Measured value} \\
 \hline
-$\mathsf{TBIBE.Setup}$ &
-  Calls \texttt{ToyHash::trapdoorPublicC} to generate $\mathbf{C}$ (an identity matrix,
-  modelling $\mathsf{TrapGen}$). Samples $\mathbf{u}\leftarrow\mathbb{Z}_q^n$ uniformly.
-  For each party $j\in[N]$, constructs a partial trapdoor by computing a tail matrix
-  $\mathbf{R}$ via \texttt{trapdoorGaussianMatrix} and forming a basis $\mathbf{B}_j$
-  that satisfies $\mathbf{C}\mathbf{B}_j\equiv\mathbf{0}$ (modelling $\mathsf{PTrapGen}$).
-  \\
+Public-key size $|\mathsf{pk}|$                    & KB  & $840.2$ \\
 \hline
-$\mathsf{TBIBE.Enc}$ &
-  Samples $\mathbf{s}\leftarrow\mathbb{Z}_q^n$, noise terms $e_1\leftarrow\mathcal{D}_{\chi}$,
-  $\mathbf{e}_2\leftarrow\mathcal{D}_{\chi}^{2mk}$, $\mathbf{e}_3\leftarrow\mathcal{D}_{\chi'}^{t+\overline{m}}$.
-  Computes $\mathbf{F}_r$ via \texttt{ToyHash::identityMatrixF} (modelling $\mathsf{ExpandLocal}$
-  followed by the concatenation with $H_{\mathrm{ro}}(r)$).
-  Outputs $(\mathsf{ct}[1],\mathsf{ct}[2],\mathsf{ct}[3])$ as in the formal scheme.
-  \\
+Ciphertext size $|\mathsf{ct}|$                    & KB  & $3.5$ \\
 \hline
-$\mathsf{TBIBE.PreDec}$ &
-  Derives the batch target $\mathbf{h}=(\mathbf{u},\ldots,\mathbf{u})$ via
-  \texttt{ToyHash::batchTarget} (modelling $\mathsf{Expand}$ and the explainable
-  $\mathsf{SampleLeft}$ call). Computes the partial preimage $\mathbf{sbk}_j$ via
-  \texttt{PartialTrapdoor::samplePreimage} scaled by the Lagrange coefficient
-  $\lambda_j(0)$ (modelling $\mathsf{PSampPre}$).
-  \\
+Per-party pre-decryption key $|\mathsf{sbk}_j|$    & B   & $448$ \\
 \hline
-$\mathsf{TBIBE.Combine}$ &
-  Adds the partial preimages coordinate-wise via $\mathsf{Rec}$:
-  $\mathbf{sbk}=\sum_{j\in T}\mathbf{sbk}_j$.
-  \\
+Combined pre-decryption key $|\mathsf{sbk}|$       & B   & $448$ \\
 \hline
-$\mathsf{TBIBE.Dec}$ &
-  Re-derives $(\mathbf{v}_1,\ldots,\mathbf{v}_\ell)$ via \texttt{identityPreimage}.
-  For each ciphertext $i$ computes
-  $\mathsf{ct}_i[1]-\mathbf{sbk}^\top\mathsf{ct}_i[2]-\mathbf{v}_i^\top\mathsf{ct}_i[3]$
-  and rounds to $\{0,1\}$ by checking proximity to $\lfloor q/2\rfloor$.
-  \\
+Per-party secret key $|\mathsf{sk}_j|$             & KB  & $56.0$ \\
+\hline
+Pre-dec communication (per party)                   & B   & $448$ \\
+\hline
+Total committee communication (per batch)           & KB  & $1.3$ \\
+\hline
+\hline
+$\mathsf{Setup}$ time                              & ms  & $74.7$ \\
+\hline
+$\mathsf{Enc}$ time (per message)                  & ms  & $4.9$ \\
+\hline
+$\mathsf{PreDec}$ time (per party)                 & ms  & $2.7$ \\
+\hline
+\quad of which $\mathsf{SampleLeft}$               & ms  & $2.7$ \\
+\hline
+\quad of which $\mathsf{PSampPre}$                 & µs  & $17.6$ \\
+\hline
+$\mathsf{Combine}$ time                            & µs  & $2.1$ \\
+\hline
+$\mathsf{Dec}$ time (per ciphertext)               & ms  & $3.0$ \\
 \hline
 \end{tabular}
-\caption{Mapping of formal BTD algorithms to prototype implementations.}
-\label{tab:algo-map}
+\caption{Benchmark results for the proof-of-concept ($Q=12289$, $n=128$, $k=3$, $N=5$,
+batch size $\ell=5$; $\approx 2^{40}$ bits of concrete security via the lattice estimator).
+Timings are wall-clock means over 500--2\,000 repetitions; sizes are bit-packed logical
+sizes ($\lceil\log_2 Q\rceil=14$ bits per $\mathbb{Z}_q$ element).}
+\label{tab:eval-metrics}
 \end{table}
 
-\subsection{Toy parameters and simplifications}
+%% ----------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion-eval}
+%% ----------------------------------------------------------------
 
-The prototype is deliberately instantiated at the toy parameter set of
-Table~\ref{tab:toy-params} scaled down further to fit a single-threaded
-correctness and benchmarking run:
-\[
-    Q=12289,\quad n=4,\quad k=3,\quad N=5,\quad \ell\in\{1,\ldots,40\}.
-\]
-Several theoretic components are modelled by deterministic stubs:
-\begin{itemize}
-    \item $\mathsf{TrapGen}$: replaced by the identity matrix (norm-1 trapdoor);
-    \item Gaussian sampler for $\mathbf{T}_{\mathbf{C}_j}$: set to zero (zero-noise
-          trapdoor), so the correctness proof holds algebraically without error correction;
-    \item $\mathsf{ExpandLocal}/\mathsf{Expand}$: replaced by a deterministic
-          hash-derived diagonal matrix $\mathbf{F}_r$ whose structure preserves the
-          $\mathbf{C}^{\top}\mathbf{sbk}+\mathbf{F}_r^{\top}\mathbf{v}_i=\mathbf{u}$ invariant.
-\end{itemize}
-\paragraph{Hash function.}
-All three random oracles $H$, $H_{\mathrm{ro}}$, and $H_{\mathrm{sp}}$ are implemented
-as domain-separated SHAKE-256 evaluations (Keccak-1600 permutation, FIPS~202).
-We vendor the ``more-compact'' C reference from the XKCP project
-(CC0 / public domain, $\approx$30 lines): the function
-\[
-    \mathsf{FIPS202\_SHAKE256}(\textit{in}, \textit{inLen}, \textit{out}, \textit{outLen})
-\]
-squeezes arbitrarily many output bytes from the Keccak sponge with rate $r=1088$ bits,
-suffix byte $\mathtt{0x1F}$, and capacity $c=512$ bits. Each oracle is separated by a
-64-bit domain tag prepended to the input before absorption:
-\begin{center}
-\begin{tabular}{lll}
-\hline
-\textbf{Oracle} & \textbf{Tag prefix} & \textbf{Output} \\
-\hline
-$H(r)$ / $H_{\mathrm{ro}}$ row $i$ & $i$ & diagonal scalar in $\mathbb{Z}_q$ \\
-$H_{\mathrm{sp}}$ (batch target coord $i$) & $\mathtt{0x0400}\,|\,i$ & element of $\{-1,0,1\}$ \\
-\hline
-\end{tabular}
-\end{center}
-The pair $\{H_{\mathrm{ro}}\text{ row }i, H_{\mathrm{sp}}\text{ coord }i\}$ is
-distinguished by tag ranges $[0, n)$ versus $[\mathtt{0x400}, \mathtt{0x400}+n)$,
-so no two oracles share a tag.
-These stubs preserve the \emph{algebraic structure} needed for correctness (the
-decryption invariant $\mathbf{C}^\top\mathbf{sbk}+\mathbf{F}_r^\top\mathbf{v}_i
-=\mathbf{u}$ holds exactly) while removing statistical Gaussian overhead
-that is not yet required for a proof-of-concept evaluation.
+\subsection{Bottleneck Profile}
 
-\subsection{Correctness test suite}
+The dominant cost in every algorithm is the SHAKE-256 (Keccak-1600) invocations of the
+random oracles.
+$\mathsf{Enc}$ (4.9 ms) generates $\mathbf{F}_r$ via $n=128$ SHAKE-256 calls (one per
+row), then performs matrix--vector products over $\mathbb{Z}_q^{128\times 1792}$.
+$\mathsf{PreDec}$ (2.7 ms per party) is dominated by the $\mathsf{SampleLeft}$ phase
+(2.7 ms), which hashes the packed identity batch once per coordinate of the target vector;
+the $\mathsf{PSampPre}$ step (17.6 µs) is negligible.
+$\mathsf{Dec}$ (3.0 ms) mirrors $\mathsf{Enc}$ because it re-derives the same
+$\mathbf{v}_i$ vectors.
+$\mathsf{Combine}$ (2.1 µs) is a plain vector sum and therefore effectively free.
 
-The correctness suite (\texttt{runRandomizedTests}) executes the following checks:
-\begin{enumerate}
-    \item Well-formedness of all public-key matrices (entries in $\mathbb{Z}_q$,
-          correct dimensions).
-    \item Non-degeneracy of noise distributions $\chi,\chi'$ (verified to produce
-          non-zero samples within 200 encryptions).
-    \item Structural checks on ciphertext and share outputs.
-    \item Single-identity correctness: encrypt 0 and 1, combine shares from a
-          threshold set, decrypt, assert $m'=m$.
-    \item Batch correctness: encrypt a 5-bit message batch, combine, batch-decrypt,
-          assert equality.
-    \item Input validation: illegal bit values, mismatched sizes, parties outside
-          the threshold set, unsorted/duplicate threshold sets, mismatched share
-          metadata.
-    \item \textbf{1\,000 randomised round-trips}: random seed, random batch size in
-          $[1,40]$, random bits, random identities, random threshold set of size $k$;
-          assert decryption noise $|\text{noise}|<128$ and $m'=m$ for every ciphertext.
-    \item \textbf{200 randomised byte round-trips}: encode arbitrary byte strings
-          bit-by-bit, encrypt, decrypt, compare reconstructed bytes.
-\end{enumerate}
-All 1\,200+ correctness assertions pass deterministically.
+\subsection{On Practicality and Significance}
 
-\subsection{Experimental setup and results}
+The results in Table~\ref{tab:eval-metrics} are clearly not production-ready.
+The $2^{40}$-bit security parameter is far below the 128-bit level required for real
+deployment, and the 840 KB public key would need to grow by several orders of magnitude at
+production parameters—exacerbating an already-large memory footprint.
+Nonetheless, the prototype demonstrates concrete feasibility of the full threshold
+pre-decryption pipeline and motivates the following observations.
 
-Benchmarks were collected on an x86-64 machine (Intel Core i5-11300H \@ 3.10 GHz,
-WSL2/Linux, 8 GB RAM) using \texttt{g++ 11.4.0} with \texttt{-O2}.
-Timings are wall-clock means over 500 (slow paths) or 2\,000 (fast paths)
-repetitions. Sizes are computed from the bit-packed logical representation
-($\lceil\log_2 Q\rceil=14$ bits per $\mathbb{Z}_q$ element).
+\paragraph{Non-interactive threshold pre-decryption is achievable.}
+Unlike \textsf{BLT25}, which requires two rounds of committee communication and
+$\Omega(N)$ pairwise PRF seeds per party, the proposed scheme performs threshold
+pre-decryption in a single, non-interactive step.
+This is a qualitative advantage in the encrypted-mempool setting: parties can publish their
+pre-decryption shares independently and asynchronously without any synchronisation protocol
+between committee members.
 
-The measured benchmark values are summarised in Table~\ref{tab:eval-metrics} at the
-beginning of this chapter.
+\paragraph{The bottleneck is hash evaluation, not lattice arithmetic.}
+The per-ciphertext cost of $\mathsf{Enc}$, $\mathsf{PreDec}$, and $\mathsf{Dec}$ is
+dominated by the SHAKE-256 invocations for the identity-to-matrix hash oracle, not by
+matrix arithmetic over $\mathbb{Z}_q$.
+This suggests that a structured lattice variant (e.g.\ RLWE or MLWE) would reduce the
+matrix dimension and therefore the hash workload—the key direction for improving concrete
+efficiency.
 
-\subsection{Discussion}
+\paragraph{The $k$-factor dimension overhead is the principal cost driver.}
+Every output size in Table~\ref{tab:size-vs-blt} carries a factor of $k$ relative to a
+non-threshold baseline.
+With $k=3$, the public key at 840 KB is already $3\times$ larger than it would be for a
+single-authority BIBE, and the ciphertext (3.5 KB) similarly.
+Reducing $k$ by moving to a $(2,N)$ or $(1,N)$ scheme, or by exploiting algebraic
+structure (e.g.\ polynomial rings) to compress the partial-trapdoor representation, is the
+most direct path to practical sizes.
 
-\paragraph{Bottleneck profile.}
-With SHAKE-256 as the underlying hash function, the dominant cost across every
-algorithm is the Keccak-1600 permutation invoked by the random oracles.
-$\mathsf{Enc}$ (71.05 µs) is the most expensive per-message operation: it calls
-\texttt{identityMatrixF}, which hashes the identity string once per row
-($n=4$ SHAKE-256 calls), then performs two matrix--vector products over
-$\mathbb{Z}_q^{4\times 56}$. $\mathsf{PreDec}$ (67.62 µs per party) is
-dominated by the $\mathsf{SampleLeft}$ phase (66.79 µs), which absorbs the
-packed identity batch into SHAKE-256 once per coordinate of the target vector;
-the $\mathsf{PSampPre}$ analogue (0.83 µs) is negligible by comparison.
-$\mathsf{Dec}$ (59.35 µs) mirrors $\mathsf{Enc}$ because it must re-derive the
-same $\mathbf{v}_i$ vectors via the same SHAKE-256 calls.
-$\mathsf{Setup}$ (8.87 µs) and $\mathsf{Combine}$ (0.39 µs) remain cheap
-because neither involves per-identity hash evaluations.
-
-\paragraph{Scaling to production parameters.}
-The toy PoC uses $Q=12289$, $n=4$, which is orders of magnitude smaller than the
-$2^{64}$-secure parameter set of Table~\ref{tab:secure-params} ($\lceil\log_2 q\rceil=127$,
-$nk=2560$). Under the production parameters, the matrix dimensions grow to
-$\mathbf{C}\in\mathbb{Z}_q^{2560\times 655360}$ (approximately 26.8 GB) and the key vector
-$\mathbf{sbk}\in\mathbb{Z}_q^{655360}$ requires $\approx 9$ MB. The dominant cost will be
-the $\mathsf{SampleLeft}$ call over a $2560\times (655360+650240)$ matrix together with the
-Gaussian sampler operating at width $\sigma_1\approx 2^{45.9}$. Optimising these two
-steps---for instance by replacing the Gram--Schmidt orthogonalisation with a parallel
-blocked algorithm or exploiting the gadget structure to reduce the effective
-dimension---is the most productive direction for improving concrete performance.
-
-\paragraph{What the prototype validates.}
-Despite the parameter reductions, the prototype faithfully exercises the full
-algebraic path: trapdoor generation $\to$ partial trapdoor distribution $\to$
-LWE encryption $\to$ threshold pre-decryption $\to$ Lagrange reconstruction
-$\to$ dual-Regev decryption. The 1\,200+ correctness assertions confirm that the
-decryption invariant $\mathbf{C}^\top\mathbf{sbk}+\mathbf{F}_r^\top\mathbf{v}_i
-=\mathbf{u}$ holds for all tested parameters, providing evidence that the
-algebraic design is correct.
+\paragraph{A new baseline for post-quantum threshold batch IBE.}
+Despite the limitations above, this work establishes, to the best of our knowledge, the
+\emph{first concrete proof-of-concept for a post-quantum, non-interactive threshold batch
+IBE}.
+The prototype demonstrates that partial lattice trapdoors~\cite{AC:ALLW25} can be combined
+with the shifted multi-preimage sampler~\cite{EPRINT:BonLauTas25} to realise distributed,
+quantum-resistant batch decryption without any interactive coordination.
+The measured timings confirm that the algebraic path is computationally feasible at the
+chosen parameter scale, and the performance profile clearly identifies the components
+(hash evaluations, matrix--vector products at dimension $nk$) that must be optimised for
+the scheme to become practical.
+We therefore view the prototype not as a deployment-ready solution, but as a necessary
+first step demonstrating that post-quantum non-interactive threshold batch IBE is
+constructively achievable.
