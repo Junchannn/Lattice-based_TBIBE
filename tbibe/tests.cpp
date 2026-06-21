@@ -173,8 +173,8 @@ private:
         Ciphertext one = scheme.encrypt(identities[0], 1);
 
         assert(scheme.decryptionInvariantHolds(identities[0], key.value));
-        assert(std::llabs(decryptionNoise(scheme, zero, key, 0)) < 128);
-        assert(std::llabs(decryptionNoise(scheme, one, key, 1)) < 128);
+        assert(std::llabs(decryptionNoise(scheme, zero, key, 0)) < Q / 4);
+        assert(std::llabs(decryptionNoise(scheme, one, key, 1)) < Q / 4);
         assert(scheme.decrypt(zero, key) == 0);
         assert(scheme.decrypt(one, key) == 1);
     }
@@ -188,7 +188,7 @@ private:
         BatchDecryptionKey key = scheme.combine(predecryptAll(scheme, thresholdSet, identities));
         std::vector<Ciphertext> ciphertexts = scheme.encryptBits(bits, identities);
         for (std::size_t i = 0; i < bits.size(); ++i) {
-            assert(std::llabs(decryptionNoise(scheme, ciphertexts[i], key, bits[i])) < 128);
+            assert(std::llabs(decryptionNoise(scheme, ciphertexts[i], key, bits[i])) < Q / 4);
         }
         assert(scheme.decryptBatch(ciphertexts, key) == bits);
     }
@@ -228,7 +228,7 @@ private:
             auto ciphertexts = scheme.encryptBits(bits, identities);
             for (int i = 0; i < batchSize; ++i) {
                 assert(scheme.decryptionInvariantHolds(identities[i], key.value));
-                assert(std::llabs(decryptionNoise(scheme, ciphertexts[i], key, bits[i])) < 128);
+                assert(std::llabs(decryptionNoise(scheme, ciphertexts[i], key, bits[i])) < Q / 4);
                 assert(scheme.decrypt(ciphertexts[i], key) == bits[i]);
             }
             assert(scheme.decryptBatch(ciphertexts, key) == bits);

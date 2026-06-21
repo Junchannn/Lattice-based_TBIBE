@@ -14,16 +14,16 @@ constexpr Scalar Q = 12289;
 constexpr Scalar HalfQ = Q / 2;
 constexpr int Parties = 5;
 constexpr int Threshold = 3;
-constexpr int Dim = 128;
-constexpr int KeyCols = 256;
+constexpr int Dim = 448;
+constexpr int KeyCols = 896;
 constexpr int GadgetWidth = 14;
 constexpr int IdentityCols = Dim * GadgetWidth;
 constexpr double TrapdoorGaussianSigma = 0.0;
 constexpr int TrapdoorGaussianBound = 0;
-constexpr double CiphertextChiSigma = 0.45;
-constexpr int CiphertextChiBound = 1;
-constexpr double CiphertextChiPrimeSigma = 0.45;
-constexpr int CiphertextChiPrimeBound = 1;
+constexpr double CiphertextChiSigma = 3.2;
+constexpr int CiphertextChiBound = 10;
+constexpr double CiphertextChiPrimeSigma = 3.2;
+constexpr int CiphertextChiPrimeBound = 10;
 
 struct PublicKey {
     Matrix Atilde;
