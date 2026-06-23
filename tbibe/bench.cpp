@@ -3,7 +3,7 @@
 #include "config.hpp"
 #include "mod_arith.hpp"
 #include "threshold_batch_ibe.hpp"
-#include "toy_hash.hpp"
+#include "hash.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -125,7 +125,7 @@ void runBenchmarks() {
     // In the toy PoC this corresponds to batchTarget() which hashes the
     // identity list into the target vector u_hat = (u,...,u).
     double sampleLeftUs = meanUs([&]{
-        ToyHash::batchTarget(ids);
+        Hash::batchTarget(ids);
     }, REPS_FAST);
 
     // "PSampPre" analogue: the Lagrange-weighted partial preimage step.

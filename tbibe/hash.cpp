@@ -1,4 +1,4 @@
-// toy_hash.cpp — hash oracles backed by SHAKE-256 (Keccak-1600).
+// hash.cpp — hash oracles backed by SHAKE-256 (Keccak-1600).
 //
 // All three hash functions H, H_ro, H_sp from the BTD construction are
 // modelled here as domain-separated SHAKE-256 evaluations.
@@ -9,7 +9,7 @@
 //   H_sp  : tag 0x03 — serialised (A, T_A, ids, u, σ) → random coins
 //   batch : tag 0x04 — packed identity list → Z_q^n          (target vector)
 
-#include "toy_hash.hpp"
+#include "hash.hpp"
 #include "keccak.hpp"
 
 #include <cstring>
@@ -30,9 +30,9 @@ static uint64_t h_u64(const std::string& input, uint64_t tag)
         tag);
 }
 
-// ── ToyHash::u64 (public API, kept for the test suite) ───────────────────
+// ── Hash::u64 (public API, kept for the test suite) ──────────────────────
 
-uint64_t ToyHash::u64(const std::string& input, uint64_t seed)
+uint64_t Hash::u64(const std::string& input, uint64_t seed)
 {
     // seed is used as the domain tag so callers stay compatible.
     return h_u64(input, seed);
@@ -55,16 +55,16 @@ uint64_t ToyHash::u64(const std::string& input, uint64_t seed)
 // gadget decomposition structure that identityPreimage exploits, while
 // sourcing the diagonal values from a proper cryptographic hash.
 
-Matrix ToyHash::identityMatrixF(const std::string& identity)
+Matrix Hash::identityMatrixF(const std::string& identity)
 {
     // Domain tags 0, 1, …, Dim-1 must match the seeds passed by
-    // ThresholdBatchIBE::identityPreimage, which calls ToyHash::u64(identity, i).
-    // ToyHash::u64 delegates directly to h_u64(input, seed), so using tag = i
+    // ThresholdBatchIBE::identityPreimage, which calls Hash::u64(identity, i).
+    // Hash::u64 delegates directly to h_u64(input, seed), so using tag = i
     // here keeps the two functions consistent (F-matrix and its inverse).
 
     Matrix F(Dim, Vector(IdentityCols, 0));
     for (int i = 0; i < Dim; ++i) {
-        // Same SHAKE-256 call as ToyHash::u64(identity, i).
+        // Same SHAKE-256 call as Hash::u64(identity, i).
         uint64_t raw = h_u64(identity, static_cast<uint64_t>(i));
         Scalar diagonal = 1 + static_cast<Scalar>(raw % static_cast<uint64_t>(Q - 1));
 
@@ -83,7 +83,7 @@ Matrix ToyHash::identityMatrixF(const std::string& identity)
 // Models H_sp / batch target derivation.  We null-separate the identities
 // and squeeze one uint64_t per coordinate from SHAKE-256.
 
-Vector ToyHash::batchTarget(const std::vector<std::string>& identities)
+Vector Hash::batchTarget(const std::vector<std::string>& identities)
 {
     constexpr uint64_t BATCH_BASE = 0x0400ULL;
 
@@ -110,7 +110,7 @@ Vector ToyHash::batchTarget(const std::vector<std::string>& identities)
 // for row/column scalars outside the toy-trapdoor basis would use SHAKE-256
 // in a fuller implementation; nothing changes here.
 
-Matrix ToyHash::trapdoorPublicC(ThesisSampler& /*sampler*/)
+Matrix Hash::trapdoorPublicC(ThesisSampler& /*sampler*/)
 {
     Matrix C(Dim, Vector(KeyCols, 0));
     for (int i = 0; i < Dim; ++i) C[i][i] = 1;

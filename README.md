@@ -93,7 +93,7 @@ tbibe/
   threshold_batch_ibe.{hpp,cpp}         — Core scheme (Setup, Enc, PreDec, Combine, Dec)
   thesis_sampler.{hpp,cpp}             — Discrete Gaussian and uniform samplers
   mod_arith.{hpp,cpp}                  — Modular arithmetic (add, mul, matVec, etc.)
-  toy_hash.{hpp,cpp}                   — Identity-to-matrix hashing (ToyHash)
+  hash.{hpp,cpp}                       — Identity-to-matrix hashing (Hash)
   keccak.{hpp,cpp}                     — SHAKE-256 for pseudorandom expansion
   bench.{hpp,cpp}                      — Timing and size benchmarks
   tests.{hpp,cpp}                      — Randomized correctness tests

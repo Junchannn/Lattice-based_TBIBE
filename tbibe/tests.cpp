@@ -2,7 +2,7 @@
 
 #include "mod_arith.hpp"
 #include "threshold_batch_ibe.hpp"
-#include "toy_hash.hpp"
+#include "hash.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -160,7 +160,7 @@ private:
         BatchDecryptionKey key = scheme.combine(shares);
         assert(key.thresholdSet == thresholdSet);
         assert(key.batchIdentities == identities);
-        assert(ModArith::matVec(scheme.publicKey().C, key.value) == ToyHash::batchTarget(identities));
+        assert(ModArith::matVec(scheme.publicKey().C, key.value) == Hash::batchTarget(identities));
     }
 
     void testSingleDecryptionFeature() {
@@ -223,7 +223,7 @@ private:
 
             auto thresholdSet = randomThresholdSet();
             BatchDecryptionKey key = scheme.combine(predecryptAll(scheme, thresholdSet, identities));
-            assert(ModArith::matVec(scheme.publicKey().C, key.value) == ToyHash::batchTarget(identities));
+            assert(ModArith::matVec(scheme.publicKey().C, key.value) == Hash::batchTarget(identities));
 
             auto ciphertexts = scheme.encryptBits(bits, identities);
             for (int i = 0; i < batchSize; ++i) {

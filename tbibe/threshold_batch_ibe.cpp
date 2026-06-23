@@ -1,7 +1,7 @@
 #include "threshold_batch_ibe.hpp"
 
 #include "mod_arith.hpp"
-#include "toy_hash.hpp"
+#include "hash.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -34,7 +34,7 @@ Vector PartialTrapdoor::samplePreimage(const Vector& target) const {
 ThresholdBatchIBE::ThresholdBatchIBE(std::uint64_t seed) : sampler_(seed) {
     publicKey_.Atilde = sampler_.uniformMatrixZq(Dim, IdentityCols);
     publicKey_.Btilde = sampler_.uniformMatrixZq(Dim, IdentityCols);
-    publicKey_.C = ToyHash::trapdoorPublicC(sampler_);
+    publicKey_.C = Hash::trapdoorPublicC(sampler_);
     publicKey_.u = sampler_.uniformVectorZq(Dim);
     for (int party = 1; party <= Parties; ++party) authorities_.emplace_back(party, publicKey_.C, sampler_);
 }
@@ -55,7 +55,7 @@ Ciphertext ThresholdBatchIBE::encryptBit(const std::string& identity, int bit) {
     Vector e2 = sampler_.errorVectorChi(KeyCols);
     Vector e3 = sampler_.errorVectorChiPrime(IdentityCols);
 
-    Matrix F = ToyHash::identityMatrixF(identity);
+    Matrix F = Hash::identityMatrixF(identity);
     return {
         identity,
         ModArith::add(ModArith::add(ModArith::dot(publicKey_.u, s), e1), bit ? HalfQ : 0),
@@ -95,7 +95,7 @@ Vector ThresholdBatchIBE::predecryptShare(
     auto it = std::find(thresholdSet.begin(), thresholdSet.end(), party);
     if (it == thresholdSet.end()) throw std::runtime_error("party not in threshold set");
 
-    Vector target = ToyHash::batchTarget(batchIdentities);
+    Vector target = Hash::batchTarget(batchIdentities);
     std::vector<Scalar> weights = lagrangeAtZero(thresholdSet);
     Vector preimage = authorities_.at(party - 1).samplePreimage(target);
     return ModArith::scale(weights[it - thresholdSet.begin()], preimage);
@@ -132,7 +132,7 @@ Vector ThresholdBatchIBE::identityPreimage(const std::string& identity, const Ve
 
     Vector v(IdentityCols);
     for (int i = 0; i < Dim; ++i) {
-        Scalar diagonal = 1 + ToyHash::u64(identity, i) % (Q - 1);
+        Scalar diagonal = 1 + Hash::u64(identity, i) % (Q - 1);
         Scalar scaled = ModArith::mul(residual[i], ModArith::inverse(diagonal));
         for (int bit = 0; bit < GadgetWidth; ++bit) {
             v[i * GadgetWidth + bit] = (scaled >> bit) & 1;
@@ -162,7 +162,7 @@ std::vector<int> ThresholdBatchIBE::decryptBatch(
 
 bool ThresholdBatchIBE::decryptionInvariantHolds(const std::string& identity, const Vector& batchKey) const {
     Vector left = ModArith::matVec(publicKey_.C, batchKey);
-    Vector right = ModArith::matVec(ToyHash::identityMatrixF(identity), identityPreimage(identity, batchKey));
+    Vector right = ModArith::matVec(Hash::identityMatrixF(identity), identityPreimage(identity, batchKey));
     return ModArith::addVectors(left, right) == publicKey_.u;
 }
 

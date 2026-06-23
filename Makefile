@@ -1,6 +1,6 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pedantic
-SRC = tbibe_poc.cpp tbibe/keccak.cpp tbibe/mod_arith.cpp tbibe/thesis_sampler.cpp tbibe/toy_hash.cpp tbibe/threshold_batch_ibe.cpp tbibe/tests.cpp tbibe/bench.cpp
+SRC = tbibe_poc.cpp tbibe/keccak.cpp tbibe/mod_arith.cpp tbibe/thesis_sampler.cpp tbibe/hash.cpp tbibe/threshold_batch_ibe.cpp tbibe/tests.cpp tbibe/bench.cpp
 
 .PHONY: all test asan clean
 

@@ -6,7 +6,7 @@
 
 namespace tbibe {
 
-class ToyHash {
+class Hash {
 public:
     static std::uint64_t u64(const std::string& input, std::uint64_t seed = 0);
     static Vector batchTarget(const std::vector<std::string>& identities);
