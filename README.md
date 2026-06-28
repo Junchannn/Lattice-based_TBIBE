@@ -1,6 +1,6 @@
 # Lattice-based Threshold Batch IBE (TBIBE)
 
-A C++17 proof-of-concept implementation of **Threshold Batch Identity-Based Encryption** built on integer LWE lattice hardness assumptions. This accompanies a master's thesis on lattice-based cryptographic primitives for privacy-preserving mempool design.
+A C++17 proof-of-concept implementation of **Threshold Batch Identity-Based Encryption** built on integer k-LWE lattice hardness assumptions for a graduation thesis.
 
 ## Scheme Overview
 
@@ -83,23 +83,29 @@ make bench
 
 # Build with AddressSanitizer + UBSan
 make asan
+
+# Remove generated binaries
+make clean
 ```
 
 ## Project Structure
 
 ```
-tbibe/
-  config.hpp                            — Parameters and data structure definitions
-  threshold_batch_ibe.{hpp,cpp}         — Core scheme (Setup, Enc, PreDec, Combine, Dec)
-  thesis_sampler.{hpp,cpp}             — Discrete Gaussian and uniform samplers
-  mod_arith.{hpp,cpp}                  — Modular arithmetic (add, mul, matVec, etc.)
-  hash.{hpp,cpp}                       — Identity-to-matrix hashing (Hash)
-  keccak.{hpp,cpp}                     — SHAKE-256 for pseudorandom expansion
-  bench.{hpp,cpp}                      — Timing and size benchmarks
-  tests.{hpp,cpp}                      — Randomized correctness tests
-tbibe_poc.cpp                          — Entry point (./tbibe_poc [bench])
-Makefile
-kLWE_estimate.sage                     — Sage script for κ-LWE security estimation
+.
+├── .gitignore                         # Local build artifacts and ignored thesis files
+├── README.md                          # Project overview, parameters, and usage notes
+├── Makefile                           # Build, test, benchmark, sanitizer, and clean targets
+├── kLWE_estimate.sage                 # Sage script for k-LWE security estimation
+├── tbibe_poc.cpp                      # CLI entry point: ./tbibe_poc [bench]
+├── tbibe/                             # C++17 TBIBE proof-of-concept implementation
+│   ├── config.hpp                     # Scheme parameters and core data structures
+│   ├── threshold_batch_ibe.{hpp,cpp}  # Setup, Enc, PreDec, Combine, and Dec
+│   ├── thesis_sampler.{hpp,cpp}      # Discrete Gaussian and uniform samplers
+│   ├── mod_arith.{hpp,cpp}           # Modular arithmetic and matrix/vector routines
+│   ├── hash.{hpp,cpp}                # Identity-to-matrix hashing
+│   ├── keccak.{hpp,cpp}              # SHAKE-256 pseudorandom expansion
+│   ├── bench.{hpp,cpp}               # Timing and size benchmarks
+│   └── tests.{hpp,cpp}               # Randomized correctness tests
 ```
 
 ## Security Notes

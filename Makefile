@@ -20,4 +20,4 @@ asan:
 	ASAN_OPTIONS=detect_leaks=0 ./tbibe_poc_asan
 
 clean:
-	rm -f tbibe_poc tbibe_poc_asan
+	rm -f tbibe_poc tbibe_poc_asan btibe_poc
